@@ -1,5 +1,18 @@
 // $Id$
 
+2008-09-23 Jason Flatt drupal@oadaeh.net
+  * smtp.module: Added the final touch: a workaround for a multipart/mixed
+    logic error in PHPMailer.
+  * po/smtp.pot: Moved to translations/.
+
+2008-09-18 Jason Flatt drupal@oadaeh.net
+  * smtp.module: After many hours of research, code refactoring and testing,
+    this module is hopefully MIME 1.0 compliant.
+
+2008-08-26 Jason Flatt drupal@oadaeh.net
+  * smtp.module: Changed admin/reports/watchdog to admin/reports/dblog, per
+    greggles in IRC.
+
 2008-07-17 Jason Flatt drupal@oadaeh.net
   * po: Changed to translations (http://drupal.org/node/262455).
     translations/de.po: Added (http://drupal.org/node/262455).
