@@ -4,6 +4,10 @@
   * smtp.module: Added the final touch: a workaround for a multipart/mixed
     logic error in PHPMailer.
   * po/smtp.pot: Moved to translations/.
+  * class.phpmailer.php.2.0.2.patch, class.phpmailer.php.2.2.1.patch: Added
+    to apply a work around to a logic error in PHPMailer, which is reported
+    here:
+    http://sourceforge.net/tracker/index.php?func=detail&aid=2125119&group_id=26031&atid=385707
 
 2008-09-18 Jason Flatt drupal@oadaeh.net
   * smtp.module: After many hours of research, code refactoring and testing,
