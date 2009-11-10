@@ -276,6 +276,15 @@ function drupal_mail_wrapper($message) {
     $from_name = variable_get('site_name', '');
   }
 
+  //Hack to fix reply-to issue.
+  $properfrom = variable_get('site_mail','');
+  if (!empty($properfrom)) {
+    $headers['From'] = $properfrom;
+  }
+  if (!isset($headers['Reply-To']) || empty($headers['Reply-To'])) {
+    $headers['Reply-To'] = $from;
+  }
+
   // Blank value will let the e-mail address appear.
 
   if ($from == NULL || $from == '') {
