@@ -55,7 +55,8 @@ function smtp_menu() {
  */
 function smtp_admin_settings() {
   // Override the smtp_library variable.
-  if (module_exists('mimemail')) {
+  if (module_exists('mimemail') &&
+      strpos(variable_get('smtp_library', ''), 'mimemail')) {
     // don't touch smtp_library
   }
   else {
@@ -814,10 +815,13 @@ function _smtp_get_substring($source, $target, $beginning_character, $ending_cha
   return $substring;
 }  //  End of _smtp_get_substring().
 
-function drupal_mail_wrapper($message) {
-  return smtp_drupal_mail_wrapper($message);
+if (!strpos(variable_get('smtp_library', ''), 'mimemail') &&
+      !function_exists('drupal_mail_wrapper') ) {
+        
+  function drupal_mail_wrapper($message) {
+    return smtp_drupal_mail_wrapper($message);
+  }
 }
-
 
 if (module_exists('mimemail')) {
 /**
