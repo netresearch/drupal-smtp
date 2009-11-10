@@ -362,50 +362,61 @@ function drupal_mail_wrapper($message) {
         break;
 
       case 'content-type':
-        if (strpos(drupal_strtolower($value), 'text/plain') !== FALSE) {
-          // The message includes only a plain text part.
-          $mail->IsHTML(FALSE);
+	// Parse several values on the Content-type header, storing them in an array like
+	// key=value -> $vars['key']='value'
+	$vars = explode('; ', $value);
+	foreach ($vars as $i => $var) {
+	  if ($cut = strpos($var, '=')) {
+	    $new_var = drupal_strtolower(substr($var, $cut + 1));
+	    $new_key = substr($var, 0, $cut);
+	    unset($vars[$i]);
+	    $vars[$new_key] = $new_var;
+	  }
+	}
+	
+        // Set the charset based on the provided value, if there is one.
+        $charset = $vars['charset'];
+        if ($charset) {
+          $mail->CharSet = $charset;
+        }
+	switch ($vars[0]) {
+	  case 'text/plain':
+            // The message includes only a plain text part.
+            $mail->IsHTML(FALSE);
+            $content_type = 'text/plain';
+	    break;
+          case 'text/html':
+            // The message includes only an HTML part.
+            $mail->IsHTML(TRUE);
+            $content_type = 'text/html';
+          break;
+          case 'multipart/related':
+            // The message includes an HTML part w/inline attachments.
+            $mail->ContentType = $content_type = 'multipart/related';
+          break;
+          case 'multipart/alternative':
+            // The message includes both a plain text and an HTML part.
+            $mail->ContentType = $content_type = 'multipart/alternative';
 
-          // Set the charset based on the provided value, if there is one.
-          $charset = _smtp_get_substring($value, 'charset', '=', ';');
-          if ($charset) {
-            $mail->CharSet = $charset;
-          }
+            // Get the boundary ID from the Content-Type header.
+            $boundary = _smtp_get_substring($value, 'boundary', '"', '"');
+          break;
+          case 'multipart/mixed':
+            // The message includes one or more attachments.
+            $mail->ContentType = $content_type = 'multipart/mixed';
 
-          $content_type = 'text/plain';
-        }
-        elseif (strpos(drupal_strtolower($value), 'text/html') !== FALSE) {
-          // The message includes only an HTML part.
-          $mail->IsHTML(TRUE);
-          $content_type = 'text/html';
-        }
-        elseif (strpos(drupal_strtolower($value), 'multipart/related') !== FALSE) {
-          // The message includes an HTML part w/inline attachments.
-          $mail->ContentType = $content_type = 'multipart/related';
-        }
-        elseif (strpos(drupal_strtolower($value), 'multipart/alternative') !== FALSE) {
-          // The message includes both a plain text and an HTML part.
-          $mail->ContentType = $content_type = 'multipart/alternative';
+            // Get the boundary ID from the Content-Type header.
+            $boundary = _smtp_get_substring($value, 'boundary', '"', '"');
+          break;
+          default:
+            // Everything else is unsuppored by PHPMailer.
+            drupal_set_message(t('The Content-Type of your message is not supported by PHPMailer and will be sent as text/plain instead.'), 'error');
+            watchdog('smtp', 'The Content-Type of your message is not supported by PHPMailer and will be sent as text/plain instead.', array(), WATCHDOG_ERROR);
 
-          // Get the boundary ID from the Content-Type header.
-          $boundary = _smtp_get_substring($value, 'boundary', '"', '"');
-        }
-        elseif (strpos(drupal_strtolower($value), 'multipart/mixed') !== FALSE) {
-          // The message includes one or more attachments.
-          $mail->ContentType = $content_type = 'multipart/mixed';
-
-          // Get the boundary ID from the Content-Type header.
-          $boundary = _smtp_get_substring($value, 'boundary', '"', '"');
-        }
-        else {
-          // Everything else is unsuppored by PHPMailer.
-          drupal_set_message(t('The Content-Type of your message is not supported by PHPMailer and will be sent as text/plain instead.'), 'error');
-          watchdog('smtp', 'The Content-Type of your message is not supported by PHPMailer and will be sent as text/plain instead.', array(), WATCHDOG_ERROR);
-
-          // Force the Content-Type to be text/plain.
-          $mail->IsHTML(FALSE);
-          $content_type = 'text/plain';
-        }
+            // Force the Content-Type to be text/plain.
+            $mail->IsHTML(FALSE);
+            $content_type = 'text/plain';
+	}
         break;
 
       case 'reply-to':
