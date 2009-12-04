@@ -428,7 +428,15 @@ function smtp_drupal_mail_wrapper($message) {
       case 'reply-to':
         // Only add a "reply-to" if it's not the same as "return-path".
         if ($value != $headers['Return-Path']) {
-          $mail->AddReplyTo($value);
+          if (strpos($value, '<') !== FALSE) {
+            $replyToParts = explode('<', $value);
+            $replyToName = trim($replyToParts[0]);
+            $replyToName = trim($replyToName, '"');
+            $replyToAddr = rtrim($replyToParts[1], '>');
+            $mail->AddReplyTo($replyToAddr, $replyToName);
+          } else {
+            $mail->AddReplyTo($value);
+          }
         }
         break;
 
