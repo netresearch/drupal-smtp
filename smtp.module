@@ -283,7 +283,7 @@ function smtp_drupal_mail_wrapper($message) {
   }
 
   //Hack to fix reply-to issue.
-  $properfrom = variable_get('site_mail','');
+  $properfrom = variable_get('site_mail', '');
   if (!empty($properfrom)) {
     $headers['From'] = $properfrom;
   }
@@ -318,7 +318,7 @@ function smtp_drupal_mail_wrapper($message) {
   if (preg_match('/^"?.*"?\s*<.*>$/', $from)) {
     // . == Matches any single character except line break characters \r and \n.
     // * == Repeats the previous item zero or more times.
-    $from_name = preg_replace('/"?([^("\s)]*)"?.*$/', '$1', $from); // It gives: Name 
+    $from_name = preg_replace('/"?([^("\s)]*)"?.*$/', '$1', $from); // It gives: Name
     $from      = preg_replace("/(.*)\<(.*)\>/i", '$2', $from); // It gives: name@domain.tld
   }
   elseif (!valid_email_address($from)) {
@@ -368,29 +368,29 @@ function smtp_drupal_mail_wrapper($message) {
         break;
 
       case 'content-type':
-	// Parse several values on the Content-type header, storing them in an array like
-	// key=value -> $vars['key']='value'
-	$vars = explode('; ', $value);
-	foreach ($vars as $i => $var) {
-	  if ($cut = strpos($var, '=')) {
-	    $new_var = drupal_strtolower(substr($var, $cut + 1));
-	    $new_key = substr($var, 0, $cut);
-	    unset($vars[$i]);
-	    $vars[$new_key] = $new_var;
-	  }
-	}
-	
+  // Parse several values on the Content-type header, storing them in an array like
+  // key=value -> $vars['key']='value'
+  $vars = explode('; ', $value);
+  foreach ($vars as $i => $var) {
+    if ($cut = strpos($var, '=')) {
+      $new_var = drupal_strtolower(drupal_substr($var, $cut + 1));
+      $new_key = drupal_substr($var, 0, $cut);
+      unset($vars[$i]);
+      $vars[$new_key] = $new_var;
+    }
+  }
+
         // Set the charset based on the provided value, if there is one.
         $charset = $vars['charset'];
         if ($charset) {
           $mail->CharSet = $charset;
         }
-	switch ($vars[0]) {
-	  case 'text/plain':
+  switch ($vars[0]) {
+    case 'text/plain':
             // The message includes only a plain text part.
             $mail->IsHTML(FALSE);
             $content_type = 'text/plain';
-	    break;
+      break;
           case 'text/html':
             // The message includes only an HTML part.
             $mail->IsHTML(TRUE);
@@ -422,7 +422,7 @@ function smtp_drupal_mail_wrapper($message) {
             // Force the Content-Type to be text/plain.
             $mail->IsHTML(FALSE);
             $content_type = 'text/plain';
-	}
+  }
         break;
 
       case 'reply-to':
@@ -434,7 +434,8 @@ function smtp_drupal_mail_wrapper($message) {
             $replyToName = trim($replyToName, '"');
             $replyToAddr = rtrim($replyToParts[1], '>');
             $mail->AddReplyTo($replyToAddr, $replyToName);
-          } else {
+          }
+          else {
             $mail->AddReplyTo($value);
           }
         }
@@ -628,7 +629,7 @@ function smtp_drupal_mail_wrapper($message) {
 
           if (file_exists($file_path)) {
             if (!$mail->AddAttachment($file_path, $file_name, $file_encoding, $filetype)) {
-              drupal_set_message('Attahment could not be found or accessed.');
+              drupal_set_message(t('Attahment could not be found or accessed.'));
             }
           }
           else {
@@ -649,7 +650,7 @@ function smtp_drupal_mail_wrapper($message) {
             $file_path               = file_save_data($attachment, $attachment_new_filename, FILE_EXISTS_RENAME);
 
             if (!$mail->AddAttachment($file_path, $file_name)) { // , $file_encoding, $filetype);
-              drupal_set_message('Attachment could not be found or accessed.');
+              drupal_set_message(t('Attachment could not be found or accessed.'));
             }
           }
         }
@@ -825,7 +826,7 @@ function _smtp_get_substring($source, $target, $beginning_character, $ending_cha
 
 if (!strpos(variable_get('smtp_library', ''), 'mimemail') &&
       !function_exists('drupal_mail_wrapper') ) {
-        
+
   function drupal_mail_wrapper($message) {
     return smtp_drupal_mail_wrapper($message);
   }
@@ -887,7 +888,7 @@ function smtp_mailengine($op, $message = array()) {
   return FALSE;
 }
 
-} // if (!module_exists('mimemail')) 
+} // if (!module_exists('mimemail'))
 
 
 
