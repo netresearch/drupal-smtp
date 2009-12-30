@@ -149,7 +149,7 @@ function smtp_admin_settings() {
     '#description'   => t('SMTP Username.'),
   );
   $form['auth']['smtp_password'] = array(
-    '#type'          => 'textfield',
+    '#type'          => 'password',
     '#title'         => t('Password'),
     '#default_value' => variable_get('smtp_password', ''),
     '#description'   => t('SMTP password.'),
