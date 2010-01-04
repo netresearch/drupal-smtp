@@ -38,12 +38,21 @@ function smtp_menu() {
     'title'            => 'SMTP Authentication Support',
     'page callback'    => 'drupal_get_form',
     'page arguments'   => array('smtp_admin_settings'),
-    'access arguments' => array('administer site configuration'),
+    'access arguments' => array('administer smtp module'),
     'description'      => 'Allows the sending of site e-mail through an SMTP server of your choice.',
   );
 
   return $items;
 }  //  End of smtp_menu().
+
+
+
+/**
+ * Implementation of hook_perm().
+ */
+function smtp_perm() {
+  return array('administer smtp module');
+}  //  End of smtp_perm().
 
 
 
