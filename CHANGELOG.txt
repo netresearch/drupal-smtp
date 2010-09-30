@@ -1,5 +1,8 @@
 // $Id$
 
+2010-09-30 Jason Flatt drupal@oadaeh.net
+  * smtp.module: Fixed sending CC recipients in the BCC field.
+
 2010-04-10 Franz G Vanderlinde franz@chuva-inc.com
   * Coding standards and i18n minor improvements
   * feature request #117450 by ouzo,jeffschuler: Changing SMTP password to

@@ -490,7 +490,7 @@ function smtp_drupal_mail_wrapper($message) {
             $ccname = '';
             $ccaddr = $ccrecipient;
           }
-          $mail->AddBCC($ccaddr, $ccname);
+          $mail->AddCC($ccaddr, $ccname);
         }
         break;
 
