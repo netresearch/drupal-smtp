@@ -245,6 +245,73 @@ function smtp_admin_settings_validate($form, &$form_state) {
 
 
 /**
+ * Check for the required 3rd party libaries
+ *
+ * @param phase
+ *   The phase in which hook_requirements is run. Only 'runtime' is called.
+ *
+ * @see hook_requirements()
+ */
+function smtp_requirements($phase) {
+  $requirements = array();
+
+  if ($phase == 'runtime') {
+    drupal_load('module', 'smtp');
+
+    if (!smtp_load_library()) {
+      $requirements['smtp_phpmailer'] = array(
+        'title' => t('SMTP'),
+        'value' => t('PHP Mailer missing'),
+        'severity' => REQUIREMENT_ERROR,
+        'description' => t('SMTP.module requires the <a href="http://phpmailer.codeworxtech.com/">PHP Mailer</a> class to properly send Mail. Please download the 2.0 version (if using PHP4) or the 5.0 version (if using PHP5) and place the phpmailer folder in the sites/all/libraries folder and rename it to "phpmailer".'),
+      );
+    }
+    else {
+      $requirements['smtp_phpmailer'] = array(
+        'title' => t('SMTP'),
+        'value' => t('PHP Mailer Installed'),
+        'severity' => REQUIREMENT_OK,
+      );
+    }
+  }
+  return $requirements;
+}
+
+
+
+/**
+ * Load the PHPMailer library.
+ *
+ * @return
+ *   TRUE if the PHPMailer library is loaded, FALSE otherwise.
+ */
+function smtp_load_library() {
+  // Include the PHPMailer class (which includes the SMTP class).
+  if (!class_exists('PHPMailer')) {
+    // First try using the libraries module.
+    if (module_exists('libraries')) {
+       $smtp_phpmailer_library = module_invoke('libraries', 'get_path', 'phpmailer') . '/class.phpmailer.php';
+     }
+     //If you aren't using libraries, then check a couple other places.
+     else {
+       //Look in the default libraries location
+       $smtp_phpmailer_library = 'sites/all/libraries/phpmailer/class.phpmailer.php';
+       //If the default libraries doesn't exist, then try the old module location.
+       if (!file_exists($smtp_phpmailer_library)) {
+         $smtp_phpmailer_library = drupal_get_path('module', 'smtp') .'/phpmailer/class.phpmailer.php';
+       }
+     }
+     //Now include whatever you found.
+     if (file_exists($smtp_phpmailer_library)) {
+        require_once($smtp_phpmailer_library);
+     }
+  }
+ 
+  // Tell the caller if PHPMailer class exists.
+  return class_exists('PHPMailer');
+}
+
+/**
  * Sends out the e-mail.
  *
  * @param message
@@ -262,8 +329,10 @@ function smtp_drupal_mail_wrapper($message) {
   $body     = $message['body'];
   $headers  = $message['headers'];
 
-  // Include the PHPMailer class (which includes the SMTP class).
-  require_once(drupal_get_path('module', 'smtp') .'/phpmailer/class.phpmailer.php');
+  if (!smtp_load_library()) {
+    watchdog('smtp', 'Could not locate PHPMailer library.', array(), WATCHDOG_ERROR);
+    return FALSE;
+  }
 
   // Create a new PHPMailer object.
   $mail = new PHPMailer();
