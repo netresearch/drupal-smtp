@@ -1,4 +1,3 @@
-// $Id$
 
 SMTP Authentication Support module for Drupal 6.x.
 This module adds SMTP functionality to Drupal.

@@ -1,4 +1,3 @@
-// $Id$
 
 NOTE: See the REQUIREMENTS in the README.txt file.
 
