@@ -915,68 +915,69 @@ function _smtp_get_substring($source, $target, $beginning_character, $ending_cha
   return $substring;
 }  //  End of _smtp_get_substring().
 
-if (!strpos(variable_get('smtp_library', ''), 'mimemail') &&
-      !function_exists('drupal_mail_wrapper') ) {
+if (!strpos(variable_get('smtp_library', ''), 'mimemail') && !function_exists('drupal_mail_wrapper') ) {
 
   function drupal_mail_wrapper($message) {
     return smtp_drupal_mail_wrapper($message);
   }
+  
 }
 
 if (module_exists('mimemail')) {
-/**
- * hook_mailengine for SMTP/MIMEMAIL integration
- *
- * @param $op
- *   The operation to perform on the message.
- * @param $message
- *   The message to be sent.
- * @return
- *   Returns TRUE if the operation was successful or FALSE if it was not.
- */
-function smtp_mailengine($op, $message = array()) {
-  //default values
-  $message = array_merge( array(
-      'address' => '',
-      'subject' => '',
-      'body' => '',
-      'sender' => '',
-      'headers' => '',
-      ), $message);
-  switch ($op) {
-    case 'name':
-      return t('SMTP');
+  
+  /**
+   * hook_mailengine for SMTP/MIMEMAIL integration
+   *
+   * @param $op
+   *   The operation to perform on the message.
+   * @param $message
+   *   The message to be sent.
+   * @return
+   *   Returns TRUE if the operation was successful or FALSE if it was not.
+   */
+  function smtp_mailengine($op, $message = array()) {
+    //default values
+    $message = array_merge( array(
+        'address' => '',
+        'subject' => '',
+        'body' => '',
+        'sender' => '',
+        'headers' => '',
+        ), $message);
+    switch ($op) {
+      case 'name':
+        return t('SMTP');
 
-    case 'description':
-      return t("SMTP mailing engine using SMTP authenticaion.");
+      case 'description':
+        return t("SMTP mailing engine using SMTP authenticaion.");
 
-    case 'settings': //not implemented
-      return FALSE;
+      case 'settings': //not implemented
+        return FALSE;
 
-    case 'multiple':
-    case 'single':
-    case 'send':
-      if (!is_array($message['address'])) {
-        $message['address'] = array($message['address']);
-      }
-      $status = TRUE;
-      $message['headers']['Content-Type'] = str_replace('multipart/alternative', 'multipart/mixed', $message['headers']['Content-Type']);
-      foreach ($message['address'] as $to) {
-        $status = smtp_drupal_mail_wrapper(
-          array(
-              'id' => $message['id'],
-              'to' => $to,
-              'from' => $message['headers']['From'],
-              'language' => $message['language'] ? $message['language'] : '',
-              'subject'  => $message['subject'],
-              'body'     => str_replace("\r", '', $message['body']),
-              'headers'  => $message['headers'],
-            )
-        ) && $status;
-      }
-      return $status;
+      case 'multiple':
+      case 'single':
+      case 'send':
+        if (!is_array($message['address'])) {
+          $message['address'] = array($message['address']);
+        }
+        $status = TRUE;
+        $message['headers']['Content-Type'] = str_replace('multipart/alternative', 'multipart/mixed', $message['headers']['Content-Type']);
+        foreach ($message['address'] as $to) {
+          $status = smtp_drupal_mail_wrapper(
+            array(
+                'id' => $message['id'],
+                'to' => $to,
+                'from' => $message['headers']['From'],
+                'language' => $message['language'] ? $message['language'] : '',
+                'subject'  => $message['subject'],
+                'body'     => str_replace("\r", '', $message['body']),
+                'headers'  => $message['headers'],
+              )
+          ) && $status;
+        }
+        return $status;
+    }
+    return FALSE;
   }
-  return FALSE;
-}
 
 } // if (!module_exists('mimemail'))
