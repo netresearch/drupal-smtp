@@ -411,7 +411,7 @@ function smtp_drupal_mail_wrapper($message) {
   if (preg_match('/^"?.*"?\s*<.*>$/', $from)) {
     // . == Matches any single character except line break characters \r and \n.
     // * == Repeats the previous item zero or more times.
-    $from_name = preg_replace('/"?([^("\s)]*)"?.*$/', '$1', $from); // It gives: Name
+    $from_name = preg_replace('/("([^"]*)")|(([^("\s)]*))\s*\<.*\>$/', '$2$4', $from); // It gives: Name
     $from      = preg_replace("/(.*)\<(.*)\>/i", '$2', $from); // It gives: name@domain.tld
   }
   elseif (!valid_email_address($from)) {
