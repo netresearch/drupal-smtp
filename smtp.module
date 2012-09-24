@@ -475,7 +475,7 @@ function smtp_drupal_mail_wrapper($message) {
 
   // Set the charset based on the provided value, otherwise set it to UTF-8 (which is Drupals internal default).
   $mail->CharSet = isset($vars['charset']) ? $vars['charset'] : 'UTF-8';
-  
+
   switch ($vars[0]) {
     case 'text/plain':
             // The message includes only a plain text part.
