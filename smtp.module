@@ -361,10 +361,8 @@ function smtp_drupal_mail_wrapper($message) {
 
 
   // Set the from name and e-mail address.
-  if (variable_get('smtp_fromname', '') != '') {
-    $from_name = variable_get('smtp_fromname', '');
-  }
-  else {
+  $from_name = variable_get('smtp_fromname', '');
+  if($from_name == '') {
     // If value is not defined in settings, use site_name.
     $from_name = variable_get('site_name', '');
   }
