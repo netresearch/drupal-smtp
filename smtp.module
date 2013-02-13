@@ -922,7 +922,7 @@ function _smtp_get_substring($source, $target, $beginning_character, $ending_cha
   return $substring;
 }  //  End of _smtp_get_substring().
 
-if (!strpos(variable_get('smtp_library', ''), 'mimemail') && !function_exists('drupal_mail_wrapper') ) {
+if (!strpos(variable_get('smtp_library', ''), 'mimemail') && !function_exists('drupal_mail_wrapper')  && variable_get('smtp_on', 0)) {
 
   function drupal_mail_wrapper($message) {
     return smtp_drupal_mail_wrapper($message);
