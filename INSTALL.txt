@@ -15,7 +15,7 @@ INSTALLATION INSTRUCTIONS
     b)  path/to/smtp  (ie. sites/all/modules/smtp/phpmailer)
     c)  Install the libraries module and place the library at a location where
         library module can find it.  (normally sites/all/libraries)
-        
+
 4.  Apply the adequate patch inside the phpmailer directory (check Drupal docs
     on how to apply patches).
 
