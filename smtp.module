@@ -807,7 +807,7 @@ function smtp_drupal_mail_wrapper($message) {
 }  //  End of smtp_drupal_mail_wrapper().
 
 /**
- * Send an e-mail. 
+ * Send an e-mail.
  */
 function smtp_mail_send($mail) {
   if (!$mail->Send()) {
