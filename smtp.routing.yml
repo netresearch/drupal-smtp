@@ -2,6 +2,6 @@ smtp.config:
   path: '/admin/config/system/smtp'
   defaults:
     _title: 'SMTP Authentication Support'
-    _form: '\Drupal\smtp\Form\SMTPConfigForm'
+    _form: 'Drupal\smtp\Form\SMTPConfigForm'
   requirements:
     _permission: 'administer smtp module'
