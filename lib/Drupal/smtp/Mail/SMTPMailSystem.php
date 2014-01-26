@@ -5,13 +5,26 @@
  *
  */
 
+namespace Drupal\smtp\Mail;
+
+use Drupal\Core\Mail\MailInterface;
+use Drupal\smtp\PHPMailer\PHPMailer;
+
 /**
 * Modify the drupal mail system to use smtp when sending emails.
 * Include the option to choose between plain text or HTML
 */
-class SmtpMailSystem implements MailSystemInterface {
-
+class SMTPMailSystem implements MailInterface {
   protected $AllowHtml;
+  protected $smtpConfig;
+
+  /**
+   * Constructs a SMPTMailSystem object.
+   */
+  public function __construct() {
+    $this->smtpConfig = \Drupal::config('smtp.settings');
+  }
+
   /**
    * Concatenate and wrap the e-mail body for either
    * plain-text or HTML emails.
@@ -23,7 +36,7 @@ class SmtpMailSystem implements MailSystemInterface {
    *   The formatted $message.
    */
   public function format(array $message) {
-    $this->AllowHtml = variable_get('smtp_allowhtml', 0);
+    $this->AllowHtml = $this->smtpConfig->get('smtp_allowhtml');
     // Join the body array into one string.
     $message['body'] = implode("\n\n", $message['body']);
     if ($this->AllowHtml == 0) {
@@ -57,21 +70,19 @@ class SmtpMailSystem implements MailSystemInterface {
     $mailer = new PHPMailer();
 
     // Turn on debugging, if requested.
-    if (variable_get('smtp_debugging', 0) == 1) {
+    if ($this->smtpConfig->get('smtp_debugging') == 1) {
       $mailer->SMTPDebug = TRUE;
     }
 
     // Set the from name.
-    if (variable_get('smtp_fromname', '') != '') {
-      $from_name = variable_get('smtp_fromname', '');
-    }
-    else {
+    $from_name = $this->smtpConfig->get('smtp_fromname');
+    if (empty($from_name)) {
       // If value is not defined in settings, use site_name.
-      $from_name = variable_get('site_name', '');
+      $from_name = $this->smtpConfig->get('site_name');
     }
 
     //Hack to fix reply-to issue.
-    $properfrom = variable_get('site_mail', '');
+    $properfrom = $this->smtpConfig->get('site_mail');
     if (!empty($properfrom)) {
       $headers['From'] = $properfrom;
     }
@@ -89,9 +100,9 @@ class SmtpMailSystem implements MailSystemInterface {
 
     if ($from == NULL || $from == '') {
       // If from e-mail address is blank, use smtp_from config option.
-      if (($from = variable_get('smtp_from', '')) == '') {
+      if (($from = $this->smtpConfig->get('smtp_from')) == '') {
         // If smtp_from config option is blank, use site_email.
-        if (($from = variable_get('site_mail', '')) == '') {
+        if (($from = $this->smtpConfig->get('site_mail')) == '') {
           drupal_set_message(t('There is no submitted from address.'), 'error');
           watchdog('smtp', 'There is no submitted from address.', array(), WATCHDOG_ERROR);
           return FALSE;
@@ -467,8 +478,8 @@ class SmtpMailSystem implements MailSystemInterface {
     }
 
     // Set the authentication settings.
-    $username = variable_get('smtp_username', '');
-    $password = variable_get('smtp_password', '');
+    $username = $this->smtpConfig->get('smtp_username');
+    $password = $this->smtpConfig->get('smtp_password');
 
     // If username and password are given, use SMTP authentication.
     if ($username != '' && $password != '') {
@@ -479,7 +490,7 @@ class SmtpMailSystem implements MailSystemInterface {
 
 
     // Set the protocol prefix for the smtp host.
-    switch (variable_get('smtp_protocol', 'standard')) {
+    switch ($this->smtpConfig->get('smtp_protocol')) {
       case 'ssl':
         $mailer->SMTPSecure = 'ssl';
         break;
@@ -494,8 +505,8 @@ class SmtpMailSystem implements MailSystemInterface {
 
 
     // Set other connection settings.
-    $mailer->Host = variable_get('smtp_host', '') . ';' . variable_get('smtp_hostbackup', '');
-    $mailer->Port = variable_get('smtp_port', '25');
+    $mailer->Host = $this->smtpConfig->get('smtp_host') . ';' . $this->smtpConfig->get('smtp_hostbackup');
+    $mailer->Port = $this->smtpConfig->get('smtp_port');
     $mailer->Mailer = 'smtp';
 
     $mailerArr = array(
@@ -503,7 +514,7 @@ class SmtpMailSystem implements MailSystemInterface {
       'to' => $to,
       'from' => $from,
     );
-    if (variable_get('smtp_queue', FALSE)) {
+    if ($this->smtpConfig->get('smtp_queue')) {
       watchdog('smtp', 'Queue sending mail to: @to', array('@to' => $to));
       smtp_send_queue($mailerArr);
     }

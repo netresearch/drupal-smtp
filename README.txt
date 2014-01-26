@@ -1,5 +1,5 @@
 
-SMTP Authentication Support module for Drupal 7.x.
+SMTP Authentication Support module for Drupal 8.x.
 This module adds SMTP functionality to Drupal.
 
 REQUIREMENTS
@@ -14,11 +14,11 @@ REQUIREMENTS
 INSTALLATION INSTRUCTIONS
 -------------------------
 1.  Copy the files included in the tarball into a directory named "smtp" in
-    your Drupal sites/all/modules/ directory.
+    your Drupal /modules/ directory.
 2.  Login as site administrator.
-3.  Enable the SMTP Authentication Support module on the Administer -> Modules
+3.  Enable the SMTP Authentication Support module on the Manage -> Extend
     page.
-4.  Fill in required settings on the Administer -> Configuration -> System ->
+4.  Fill in required settings on the Manage -> Configuration -> System ->
     SMTP Authentication Support page.
 5.  Enjoy.
 
@@ -27,7 +27,7 @@ NOTES
 This module sends email by connecting to an SMTP server.  Therefore, you need
 to have access to an SMTP server for this module to work.
 
-Drupal will often use the email address entered into Administrator ->
+Drupal will often use the email address entered into Manage ->
 Configuration -> Site information -> E-mail address as the from address.  It is
 important for this to be the correct address and some ISPs will block email that
 comes from an invalid address.

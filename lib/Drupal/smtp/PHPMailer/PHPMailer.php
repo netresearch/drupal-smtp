@@ -35,6 +35,11 @@ Orginal release information:
 '---------------------------------------------------------------------------'
 */
 
+namespace Drupal\smtp\PHPMailer;
+
+use Drupal\smtp\PHPMailer\SMTP;
+use Drupal\smtp\Plugin\Exception\PHPMailerException;
+
 /**
  * PHPMailer - PHP email transport class
  * NOTE: Requires PHP version 5 or later
@@ -2322,12 +2327,5 @@ class PHPMailer {
       $params = array($isSent, $to, $cc, $bcc, $subject, $body);
       call_user_func_array($this->action_function, $params);
     }
-  }
-}
-
-class phpmailerException extends Exception {
-  public function errorMessage() {
-    $errorMsg = '<strong>' . $this->getMessage() . "</strong><br />\n";
-    return $errorMsg;
   }
 }

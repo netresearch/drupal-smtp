@@ -43,6 +43,8 @@ Orginal release information:
  * @copyright 2004 - 2008 Andy Prevost
  */
 
+namespace Drupal\smtp\PHPMailer;
+
 /**
  * SMTP is rfc 821 compliant and implements all the rfc 821 SMTP
  * commands except TURN which will always return a not implemented
