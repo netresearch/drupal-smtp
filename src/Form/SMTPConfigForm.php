@@ -8,6 +8,7 @@
 namespace Drupal\smtp\Form;
 
 use Drupal\Core\Form\ConfigFormBase;
+use Drupal\Core\Form\FormStateInterface;
 
 /**
  * Implements the SMTP admin settings form.
@@ -24,8 +25,8 @@ class SMTPConfigForm extends ConfigFormBase {
   /**
    * {@inheritdoc}.
    */
-  public function buildForm(array $form, array &$form_state) {
-    $config = $this->configFactory->get('smtp.settings');
+  public function buildForm(array $form, FormStateInterface $form_state) {
+    $config = $this->configFactory->getEditable('smtp.settings');
 
     if ($config->get('smtp_on')) {
       drupal_set_message(t('SMTP.module is active.'));
@@ -68,7 +69,7 @@ class SMTPConfigForm extends ConfigFormBase {
       '#size' => 6,
       '#maxlength' => 6,
       '#default_value' => $config->get('smtp_port'),
-      '#description' => t('The default SMTP port is 25, if that is being blocked try 80. Gmail uses 465. See !url for more information on configuring for use with Gmail.', array('!url' => l(t('this page'), 'http://gmail.google.com/support/bin/answer.py?answer=13287'))),
+      '#description' => t('The default SMTP port is 25, if that is being blocked try 80. Gmail uses 465. See !url for more information on configuring for use with Gmail.', array('!url' => 'http://gmail.google.com/support/bin/answer.py?answer=13287')),
     );
     // Only display the option if openssl is installed.
     if (function_exists('openssl_open')) {
@@ -83,7 +84,7 @@ class SMTPConfigForm extends ConfigFormBase {
     else {
       $config->set('smtp_protocol', 'standard');
       $encryption_options = array('standard' => t('No'));
-      $encryption_description = t('Your PHP installation does not have SSL enabled. See the !url page on php.net for more information. Gmail requires SSL.', array('!url' => l(t('OpenSSL Functions'), 'http://php.net/openssl')));
+      $encryption_description = t('Your PHP installation does not have SSL enabled. See the !url page on php.net for more information. Gmail requires SSL.', array('!url' => 'http://php.net/openssl'));
     }
     $form['server']['smtp_protocol'] = array(
       '#type' => 'select',
@@ -139,14 +140,14 @@ class SMTPConfigForm extends ConfigFormBase {
     if ($test_address != '') {
       $options = array(
         '@email' => $test_address,
-        '!check' => l(t('check the logs'), 'admin/reports/dblog'),
+        '!check' => '/admin/reports/dblog',
       );
       // Clear the variable so only one message is sent.
       $config->clear('smtp_test_address');
       global $language;
       $params['subject'] = t('Drupal SMTP test e-mail');
       $params['body'] = array(t('If you receive this message it means your site is capable of using SMTP to send e-mail.'));
-      drupal_mail('smtp', 'smtp-test', $test_address, $language, $params);
+      //drupal_mail('smtp', 'smtp-test', $test_address, $language, $params);
       drupal_set_message(t('A test e-mail has been sent to @email. You may want to !check for any error messages.', $options));
     }
     $form['email_test'] = array(
@@ -176,42 +177,44 @@ class SMTPConfigForm extends ConfigFormBase {
   /**
    * {@inheritdoc}
    */
-  public function validateForm(array &$form, array &$form_state) {
-    if ($form_state['values']['smtp_on'] == 1 && $form_state['values']['smtp_host'] == '') {
+  public function validateForm(array &$form, FormStateInterface $form_state) {
+	$values = $form_state->getValues();
+
+    if ($values['smtp_on'] == 1 && $values['smtp_host'] == '') {
       \Drupal::formBuilder()->setErrorByName('smtp_host', $form_state, t('You must enter an SMTP server address.'));
     }
 
-    if ($form_state['values']['smtp_on'] == 1 && $form_state['values']['smtp_port'] == '') {
+    if ($values['smtp_on'] == 1 && $values['smtp_port'] == '') {
       \Drupal::formBuilder()->setErrorByName('smtp_port', $form_state, t('You must enter an SMTP port number.'));
     }
 
-    if ($form_state['values']['smtp_from'] && !valid_email_address($form_state['values']['smtp_from'])) {
+    if ($values['smtp_from'] && !valid_email_address($values['smtp_from'])) {
       \Drupal::formBuilder()->setErrorByName('smtp_from', $form_state, t('The provided from e-mail address is not valid.'));
     }
 
     // If username is set empty, we must set both username/password empty as well.
-    if (empty($form_state['values']['smtp_username'])) {
-      $form_state['values']['smtp_password'] = '';
+    if (empty($values['smtp_username'])) {
+      $values['smtp_password'] = '';
     }
     // A little hack. When form is presentend, the password is not shown (Drupal way of doing).
     // So, if user submits the form without changing the password, we must prevent it from being reset.
-    elseif (empty($form_state['values']['smtp_password'])) {
-      unset($form_state['values']['smtp_password']);
+    elseif (empty($values['smtp_password'])) {
+      unset($values['smtp_password']);
     }
   }
 
   /**
    * {@inheritdoc}
    */
-  public function submitForm(array &$form, array &$form_state) {
-    $values = $form_state['values'];
-    $config = $this->configFactory->get('smtp.settings');
+  public function submitForm(array &$form, FormStateInterface $form_state) {
+	$values = $form_state->getValues();
+    $config = $this->configFactory->getEditable('smtp.settings');
 
     if ($config->get('smtp_on') != $values['smtp_on']) {
       // Turn on SMTP mail system.
       if ($values['smtp_on']) {
         // Get default settings.
-        $mail_config = \Drupal::config('system.mail');
+        $mail_config = $this->configFactory->getEditable('system.mail');
         $mail_system = $mail_config->get('interface');
         if (empty($mail_systems)) {
           $mail_system = array('default' => 'Drupal\Core\Mail\PhpMail');
@@ -221,7 +224,7 @@ class SMTPConfigForm extends ConfigFormBase {
         $config->set('prev_mail_system', $mail_system);
 
         // Set SMTP as default mail system.
-        $mail_system['default'] = 'Drupal\smtp\Mail\SMTPMailSystem';
+        $mail_system['default'] = 'SMTPMailSystem';
         $mail_config->set('interface', $mail_system)->save();
       }
       // Turn off SMTP mail system and restore the previous one.
@@ -252,4 +255,6 @@ class SMTPConfigForm extends ConfigFormBase {
 
     parent::submitForm($form, $form_state);
   }
+  
+  public function getEditableConfigNames(){}
 }

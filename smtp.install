@@ -10,7 +10,7 @@
  */
 function smtp_install() {
   // Setting default config vars.
-  \Drupal::config('smtp.settings')
+  \Drupal::service('config.factory')->getEditable('smtp.settings')
     ->set('smtp_on', 0)
     ->set('smtp_host', '')
     ->set('smtp_hostbackup', '')
@@ -30,7 +30,7 @@ function smtp_install() {
  * Implements hook_uninstall().
  */
 function smtp_uninstall() {
-  $smtp_config = \Drupal::config('smtp.settings');
+  $smtp_config = \Drupal::service('config.factory')->getEditable('smtp.settings');
 
   // Restore previous mail system. 
   \Drupal::config('system.mail')

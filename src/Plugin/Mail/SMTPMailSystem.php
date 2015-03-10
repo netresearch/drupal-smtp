@@ -2,18 +2,24 @@
 /**
  * @file
  * The code processing mail in the smtp module.
- *
+ * 
  */
 
-namespace Drupal\smtp\Mail;
+namespace Drupal\smtp\Plugin\Mail;
 
 use Drupal\Core\Mail\MailInterface;
 use Drupal\smtp\PHPMailer\PHPMailer;
 
 /**
-* Modify the drupal mail system to use smtp when sending emails.
-* Include the option to choose between plain text or HTML
-*/
+ * Modify the drupal mail system to use smtp when sending emails.
+ * Include the option to choose between plain text or HTML
+ *
+ * @Mail(
+ *   id = "SMTPMailSystem",
+ *   label = @Translation("SMTP Mailer"),
+ *   description = @Translation("Sends the message as plain text, using SMTP.")
+ * )
+ */
 class SMTPMailSystem implements MailInterface {
   protected $AllowHtml;
   protected $smtpConfig;
@@ -147,7 +153,7 @@ class SMTPMailSystem implements MailInterface {
     // accordingly.
     foreach ($headers as $key => $value) {
       //watchdog('error', 'Key: ' . $key . ' Value: ' . $value);
-      switch (drupal_strtolower($key)) {
+      switch (strtolower($key)) {
         case 'from':
           if ($from == NULL or $from == '') {
             // If a from value was already given, then set based on header.
@@ -166,8 +172,8 @@ class SMTPMailSystem implements MailInterface {
           $vars = explode(';', $value);
           foreach ($vars as $i => $var) {
             if ($cut = strpos($var, '=')) {
-              $new_var = trim(drupal_strtolower(drupal_substr($var, $cut + 1)));
-              $new_key = trim(drupal_substr($var, 0, $cut));
+              $new_var = trim(strtolower(substr($var, $cut + 1)));
+              $new_key = trim(substr($var, 0, $cut));
               unset($vars[$i]);
               $vars[$new_key] = $new_var;
             }
@@ -540,7 +546,7 @@ class SMTPMailSystem implements MailInterface {
    */
   protected function _boundary_split($input, $boundary) {
     $parts       = array();
-    $bs_possible = drupal_substr($boundary, 2, -2);
+    $bs_possible = substr($boundary, 2, -2);
     $bs_check    = '\"' . $bs_possible . '\"';
 
     if ($boundary == $bs_check) {
@@ -621,11 +627,11 @@ class SMTPMailSystem implements MailInterface {
     $search_start     = strpos($source, $target) + 1;
     $first_character  = strpos($source, $beginning_character, $search_start) + 1;
     $second_character = strpos($source, $ending_character, $first_character) + 1;
-    $substring        = drupal_substr($source, $first_character, $second_character - $first_character);
-    $string_length    = drupal_strlen($substring) - 1;
+    $substring        = substr($source, $first_character, $second_character - $first_character);
+    $string_length    = strlen($substring) - 1;
 
     if ($substring[$string_length] == $ending_character) {
-      $substring = drupal_substr($substring, 0, $string_length);
+      $substring = substr($substring, 0, $string_length);
     }
 
     return $substring;
