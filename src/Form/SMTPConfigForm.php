@@ -255,6 +255,6 @@ class SMTPConfigForm extends ConfigFormBase {
 
     parent::submitForm($form, $form_state);
   }
-  
+
   public function getEditableConfigNames(){}
 }
