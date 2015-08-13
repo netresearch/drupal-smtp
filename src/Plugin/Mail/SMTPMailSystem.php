@@ -17,7 +17,7 @@ use Drupal\smtp\PHPMailer\PHPMailer;
  * @Mail(
  *   id = "SMTPMailSystem",
  *   label = @Translation("SMTP Mailer"),
- *   description = @Translation("Sends the message as plain text, using SMTP.")
+ *   description = @Translation("Sends the message, using SMTP.")
  * )
  */
 class SMTPMailSystem implements MailInterface {
@@ -84,7 +84,7 @@ class SMTPMailSystem implements MailInterface {
     $from_name = $this->smtpConfig->get('smtp_fromname');
     if (empty($from_name)) {
       // If value is not defined in settings, use site_name.
-      $from_name = $this->smtpConfig->get('site_name');
+      $from_name = \Drupal::config('system.site')->get('name');
     }
 
     //Hack to fix reply-to issue.

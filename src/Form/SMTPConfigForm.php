@@ -9,6 +9,7 @@ namespace Drupal\smtp\Form;
 
 use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\smtp\Plugin\Mail\SMTPMailSystem;
 
 /**
  * Implements the SMTP admin settings form.
@@ -29,10 +30,10 @@ class SMTPConfigForm extends ConfigFormBase {
     $config = $this->configFactory->getEditable('smtp.settings');
 
     if ($config->get('smtp_on')) {
-      drupal_set_message(t('SMTP.module is active.'));
+      drupal_set_message(t('SMTP module is active.'));
     }
     else {
-      drupal_set_message(t('SMTP.module is INACTIVE.'));
+      drupal_set_message(t('SMTP module is INACTIVE.'));
     }
 
     $form['onoff'] = array(
@@ -126,30 +127,16 @@ class SMTPConfigForm extends ConfigFormBase {
       '#type' => 'textfield',
       '#title' => t('E-mail from name'),
       '#default_value' => $config->get('smtp_fromname'),
-      '#description' => t('The name that all e-mails will be from. If left blank will use the site name of:') . ' ' . $config->get('site_name', 'Drupal powered site'),
+      '#description' => t('The name that all e-mails will be from. If left blank will use a default of: !name',
+          ['!name' => $this->configFactory->get('system.site')->get('name')]),
     );
     $form['email_options']['smtp_allowhtml'] = array(
       '#type' => 'checkbox',
-      '#title' => t('Allow to send e-mails formated as Html'),
+      '#title' => t('Allow to send e-mails formated as HTML'),
       '#default_value' => $config->get('smtp_allowhtml'),
-      '#description' => t('Checking this box will allow Html formated e-mails to be sent with the SMTP protocol.'),
+      '#description' => t('Checking this box will allow HTML formatted e-mails to be sent with the SMTP protocol.'),
     );
 
-    // If an address was given, send a test e-mail message.
-    $test_address = $config->get('smtp_test_address');
-    if ($test_address != '') {
-      $options = array(
-        '@email' => $test_address,
-        '!check' => '/admin/reports/dblog',
-      );
-      // Clear the variable so only one message is sent.
-      $config->clear('smtp_test_address');
-      global $language;
-      $params['subject'] = t('Drupal SMTP test e-mail');
-      $params['body'] = array(t('If you receive this message it means your site is capable of using SMTP to send e-mail.'));
-      //drupal_mail('smtp', 'smtp-test', $test_address, $language, $params);
-      drupal_set_message(t('A test e-mail has been sent to @email. You may want to !check for any error messages.', $options));
-    }
     $form['email_test'] = array(
       '#type' => 'fieldset',
       '#title' => t('Send test e-mail'),
@@ -168,9 +155,6 @@ class SMTPConfigForm extends ConfigFormBase {
       '#description' => t('Checking this box will print SMTP messages from the server for every e-mail that is sent.'),
     );
 
-    // Saving SMTP config vars.
-    $config->save();
-
     return parent::buildForm($form, $form_state);
   }
 
@@ -178,28 +162,32 @@ class SMTPConfigForm extends ConfigFormBase {
    * {@inheritdoc}
    */
   public function validateForm(array &$form, FormStateInterface $form_state) {
-	$values = $form_state->getValues();
+    $values = $form_state->getValues();
 
     if ($values['smtp_on'] == 1 && $values['smtp_host'] == '') {
-      \Drupal::formBuilder()->setErrorByName('smtp_host', $form_state, t('You must enter an SMTP server address.'));
+      $form_state->setErrorByName('smtp_host', $this->t('You must enter an SMTP server address.'));
     }
 
     if ($values['smtp_on'] == 1 && $values['smtp_port'] == '') {
-      \Drupal::formBuilder()->setErrorByName('smtp_port', $form_state, t('You must enter an SMTP port number.'));
+      $form_state->setErrorByName('smtp_port', $this->t('You must enter an SMTP port number.'));
     }
 
     if ($values['smtp_from'] && !valid_email_address($values['smtp_from'])) {
-      \Drupal::formBuilder()->setErrorByName('smtp_from', $form_state, t('The provided from e-mail address is not valid.'));
+      $form_state->setErrorByName('smtp_from', $this->t('The provided from e-mail address is not valid.'));
+    }
+
+    if ($values['smtp_test_address'] && !valid_email_address($values['smtp_test_address'])) {
+      $form_state->setErrorByName('smtp_test_address', $this->t('The provided test e-mail address is not valid.'));
     }
 
     // If username is set empty, we must set both username/password empty as well.
     if (empty($values['smtp_username'])) {
       $values['smtp_password'] = '';
     }
-    // A little hack. When form is presentend, the password is not shown (Drupal way of doing).
+    // A little hack. When form is presented, the password is not shown (Drupal way of doing).
     // So, if user submits the form without changing the password, we must prevent it from being reset.
     elseif (empty($values['smtp_password'])) {
-      unset($values['smtp_password']);
+      $form_state->unsetValue('smtp_password');
     }
   }
 
@@ -207,34 +195,10 @@ class SMTPConfigForm extends ConfigFormBase {
    * {@inheritdoc}
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
-	$values = $form_state->getValues();
+    $values = $form_state->getValues();
     $config = $this->configFactory->getEditable('smtp.settings');
-
-    if ($config->get('smtp_on') != $values['smtp_on']) {
-      // Turn on SMTP mail system.
-      if ($values['smtp_on']) {
-        // Get default settings.
-        $mail_config = $this->configFactory->getEditable('system.mail');
-        $mail_system = $mail_config->get('interface');
-        if (empty($mail_systems)) {
-          $mail_system = array('default' => 'Drupal\Core\Mail\PhpMail');
-        }
-
-        // Store default settings.
-        $config->set('prev_mail_system', $mail_system);
-
-        // Set SMTP as default mail system.
-        $mail_system['default'] = 'SMTPMailSystem';
-        $mail_config->set('interface', $mail_system)->save();
-      }
-      // Turn off SMTP mail system and restore the previous one.
-      else {
-        $config->set('prev_mail_system', array('default' => 'Drupal\Core\Mail\PhpMail'))->save();
-        \Drupal::config('system.mail')
-          ->set('interface', $config->get('prev_mail_system'))
-          ->save();
-      }
-    }
+    $mail_config = $this->configFactory->getEditable('system.mail');
+    $mail_system = $mail_config->get('interface');
 
     // Updating config vars.
     if (isset($values['smtp_password'])) {
@@ -249,12 +213,35 @@ class SMTPConfigForm extends ConfigFormBase {
       ->set('smtp_from', $values['smtp_from'])
       ->set('smtp_fromname', $values['smtp_fromname'])
       ->set('smtp_allowhtml', $values['smtp_allowhtml'])
-      ->set('smtp_test_address', $values['smtp_test_address'])
       ->set('smtp_debugging', $values['smtp_debugging'])
       ->save();
+
+    // If an address was given, send a test e-mail message.
+    if ($test_address = $values['smtp_test_address']) {
+      $params['subject'] = t('Drupal SMTP test e-mail');
+      $params['body'] = array(t('If you receive this message it means your site is capable of using SMTP to send e-mail.'));
+      $account = \Drupal::currentUser();
+      // If module is off, send the test message with SMTP by temporarily overriding.
+      if (!$config->get('smtp_on')) {
+        $original = $mail_config->get('interface');
+        $mail_system['default'] = 'SMTPMailSystem';
+        $mail_config->set('interface', $mail_system)->save();
+      }
+      \Drupal::service('plugin.manager.mail')->mail('smtp', 'smtp-test', $test_address, $account->getPreferredLangcode(), $params);
+      if (!$config->get('smtp_on')) {
+        $mail_config->set('interface', $original)->save();
+      }
+      drupal_set_message(t('A test e-mail has been sent to @email via SMTP. You may want to check the log for any error messages.', ['@email' => $test_address]));
+    }
 
     parent::submitForm($form, $form_state);
   }
 
-  public function getEditableConfigNames(){}
+  /**
+   * {@inheritdoc}
+   *
+   * @todo - Flesh this out.
+   */
+  public function getEditableConfigNames() {}
+
 }
