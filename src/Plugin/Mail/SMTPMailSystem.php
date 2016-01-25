@@ -8,6 +8,7 @@
 namespace Drupal\smtp\Plugin\Mail;
 
 use Drupal\Core\Mail\MailInterface;
+use Drupal\Core\Mail\MailFormatHelper;
 use Drupal\smtp\PHPMailer\PHPMailer;
 
 /**
@@ -47,9 +48,9 @@ class SMTPMailSystem implements MailInterface {
     $message['body'] = implode("\n\n", $message['body']);
     if ($this->AllowHtml == 0) {
       // Convert any HTML to plain-text.
-      $message['body'] = drupal_html_to_text($message['body']);
+      $message['body'] = MailFormatHelper::htmlToText($message['body']);
       // Wrap the mail body for sending.
-      $message['body'] = drupal_wrap_mail($message['body']);
+      $message['body'] = MailFormatHelper::wrapMail($message['body']);
     }
     return $message;
   }

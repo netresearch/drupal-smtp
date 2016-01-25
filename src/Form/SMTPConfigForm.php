@@ -132,7 +132,7 @@ class SMTPConfigForm extends ConfigFormBase {
     );
     $form['email_options']['smtp_allowhtml'] = array(
       '#type' => 'checkbox',
-      '#title' => t('Allow to send e-mails formated as HTML'),
+      '#title' => t('Allow to send e-mails formatted as HTML'),
       '#default_value' => $config->get('smtp_allowhtml'),
       '#description' => t('Checking this box will allow HTML formatted e-mails to be sent with the SMTP protocol.'),
     );
