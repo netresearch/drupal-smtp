@@ -116,37 +116,26 @@ class SMTPMailSystem implements MailInterface {
         }
       }
     }
-    if (preg_match('/^"?.*"?\s*<.*>$/', $from)) {
-      // . == Matches any single character except line break characters \r and \n.
-      // * == Repeats the previous item zero or more times.
-      $from_name = preg_replace('/"?([^("\t\n)]*)"?.*$/', '$1', $from); // It gives: Name
-      $from      = preg_replace("/(.*)\<(.*)\>/i", '$2', $from); // It gives: name@domain.tld
-    }
-    elseif (!valid_email_address($from)) {
+
+    $from_comp = $this->_get_components($from);
+
+    if (!valid_email_address($from_comp['email'])) {
       drupal_set_message(t('The submitted from address (@from) is not valid.', array('@from' => $from)), 'error');
       watchdog('smtp', 'The submitted from address (@from) is not valid.', array('@from' => $from), WATCHDOG_ERROR);
       return FALSE;
     }
 
     // Defines the From value to what we expect.
-    $mailer->From     = $from;
-    $mailer->FromName = $from_name;
-    $mailer->Sender   = $from;
+    $mailer->From = $from;
+    $mailer->FromName = $from_comp['name'];
+    $mailer->Sender = $from_comp['email'];
 
 
     // Create the list of 'To:' recipients.
     $torecipients = explode(',', $to);
     foreach ($torecipients as $torecipient) {
-      if (strpos($torecipient, '<') !== FALSE) {
-        $toparts = explode(' <', $torecipient);
-        $toname = $toparts[0];
-        $toaddr = rtrim($toparts[1], '>');
-      }
-      else {
-        $toname = '';
-        $toaddr = $torecipient;
-      }
-      $mailer->AddAddress($toaddr, $toname);
+      $to_comp = $this->_get_components($torecipient);
+      $mailer->AddAddress($to_comp['email'], $to_comp['name']);
     }
 
 
@@ -230,16 +219,8 @@ class SMTPMailSystem implements MailInterface {
         case 'reply-to':
           // Only add a "reply-to" if it's not the same as "return-path".
           if ($value != $headers['Return-Path']) {
-            if (strpos($value, '<') !== FALSE) {
-              $replyToParts = explode('<', $value);
-              $replyToName = trim($replyToParts[0]);
-              $replyToName = trim($replyToName, '"');
-              $replyToAddr = rtrim($replyToParts[1], '>');
-              $mailer->AddReplyTo($replyToAddr, $replyToName);
-            }
-            else {
-              $mailer->AddReplyTo($value);
-            }
+            $reply_to_comp = $this->_get_components($value);
+            $mailer->AddReplyTo($reply_to_comp['email'], $reply_to_comp['name']);
           }
           break;
 
@@ -263,32 +244,16 @@ class SMTPMailSystem implements MailInterface {
         case 'cc':
           $ccrecipients = explode(',', $value);
           foreach ($ccrecipients as $ccrecipient) {
-            if (strpos($ccrecipient, '<') !== FALSE) {
-              $ccparts = explode(' <', $ccrecipient);
-              $ccname = $ccparts[0];
-              $ccaddr = rtrim($ccparts[1], '>');
-            }
-            else {
-              $ccname = '';
-              $ccaddr = $ccrecipient;
-            }
-            $mailer->AddCC($ccaddr, $ccname);
+            $cc_comp = $this->_get_components($ccrecipient);
+            $mailer->AddCC($cc_comp['email'], $cc_comp['name']);
           }
           break;
 
         case 'bcc':
           $bccrecipients = explode(',', $value);
           foreach ($bccrecipients as $bccrecipient) {
-            if (strpos($bccrecipient, '<') !== FALSE) {
-              $bccparts = explode(' <', $bccrecipient);
-              $bccname = $bccparts[0];
-              $bccaddr = rtrim($bccparts[1], '>');
-            }
-            else {
-              $bccname = '';
-              $bccaddr = $bccrecipient;
-            }
-            $mailer->AddBCC($bccaddr, $bccname);
+            $bcc_comp = $this->_get_components($bccrecipient);
+            $mailer->AddBCC($bcc_comp['email'], $bcc_comp['name']);
           }
           break;
 
@@ -637,4 +602,39 @@ class SMTPMailSystem implements MailInterface {
 
     return $substring;
   }  //  End of _smtp_get_substring().
+
+  /**
+   * Returns an array of name and email address from a string.
+   *
+   * @param $input
+   *  A string that contains different possible combinations of names and
+   *  email address.
+   * @return
+   *  An array containing a name and an email address.
+   */
+  protected function _get_components($input) {
+    $components = array(
+      'input' => $input,
+      'name' => '',
+      'email' => '',
+    );
+
+    // If the input is a valid email address in its entirety, then there is
+    // nothing to do, just return that.
+    if (\Drupal::service('email.validator')->isValid($input)) {
+      $components['email'] = trim($input);
+      return $components;
+    }
+
+    // Check if $input has one of the following formats, extract what we can:
+    //  some name <address@example.com>
+    //  "another name" <address@example.com>
+    //  <address@example.com>
+    if (preg_match('/^"?([^"\t\n]*)"?\s*<([^>\t\n]*)>$/', $input, $matches)) {
+      $components['name'] = trim($matches[1]);
+      $components['email'] = trim($matches[2]);
+    }
+
+    return $components;
+  }
 }
