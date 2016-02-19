@@ -37,8 +37,9 @@ class SMTPConfigForm extends ConfigFormBase {
     }
 
     $form['onoff'] = array(
-      '#type'  => 'fieldset',
+      '#type'  => 'details',
       '#title' => t('Install options'),
+      '#open' => TRUE,
     );
     $form['onoff']['smtp_on'] = array(
       '#type' => 'radios',
@@ -49,8 +50,9 @@ class SMTPConfigForm extends ConfigFormBase {
     );
 
     $form['server'] = array(
-      '#type'  => 'fieldset',
+      '#type'  => 'details',
       '#title' => t('SMTP server settings'),
+      '#open' => TRUE,
     );
     $form['server']['smtp_host'] = array(
       '#type' => 'textfield',
@@ -65,7 +67,7 @@ class SMTPConfigForm extends ConfigFormBase {
       '#description' => t('The address of your outgoing SMTP backup server. If the primary server can\'t be found this one will be tried. This is optional.'),
     );
     $form['server']['smtp_port'] = array(
-      '#type' => 'textfield',
+      '#type' => 'number',
       '#title' => t('SMTP port'),
       '#size' => 6,
       '#maxlength' => 6,
@@ -96,9 +98,10 @@ class SMTPConfigForm extends ConfigFormBase {
     );
 
     $form['auth'] = array(
-      '#type' => 'fieldset',
+      '#type' => 'details',
       '#title' => t('SMTP Authentication'),
       '#description' => t('Leave blank if your SMTP server does not require authentication.'),
+      '#open' => TRUE,
     );
     $form['auth']['smtp_username'] = array(
       '#type' => 'textfield',
@@ -114,8 +117,9 @@ class SMTPConfigForm extends ConfigFormBase {
     );
 
     $form['email_options'] = array(
-      '#type'  => 'fieldset',
+      '#type'  => 'details',
       '#title' => t('E-mail options'),
+      '#open' => TRUE,
     );
     $form['email_options']['smtp_from'] = array(
       '#type' => 'textfield',
@@ -138,8 +142,9 @@ class SMTPConfigForm extends ConfigFormBase {
     );
 
     $form['email_test'] = array(
-      '#type' => 'fieldset',
+      '#type' => 'details',
       '#title' => t('Send test e-mail'),
+      '#open' => TRUE,
     );
     $form['email_test']['smtp_test_address'] = array(
       '#type' => 'textfield',
