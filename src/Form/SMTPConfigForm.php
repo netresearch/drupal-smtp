@@ -242,8 +242,8 @@ class SMTPConfigForm extends ConfigFormBase {
       // If module is off, send the test message with SMTP by temporarily overriding.
       if (!$config->get('smtp_on')) {
         $original = $mail_config->get('interface');
-        $mail_system['default'] = 'SMTPMailSystem';
-        $mail_config->set('interface', $mail_system)->save();
+        $mail_system = 'SMTPMailSystem';
+        $mail_config->set('interface.default', $mail_system)->save();
       }
       \Drupal::service('plugin.manager.mail')->mail('smtp', 'smtp-test', $test_address, $account->getPreferredLangcode(), $params);
       if (!$config->get('smtp_on')) {
