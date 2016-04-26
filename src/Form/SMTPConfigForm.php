@@ -44,11 +44,10 @@ class SMTPConfigForm extends ConfigFormBase {
     $form['onoff']['smtp_on'] = array(
       '#type' => 'radios',
       '#title' => t('Turn this module on or off'),
-      '#default_value' => $config->get('smtp_on'),
-      '#options' => array(1 => t('On'), 0 => t('Off')),
+      '#default_value' => $config->get('smtp_on') ? 'on' : 'off',
+      '#options' => array('on' => t('On'), 'off' => t('Off')),
       '#description' => t('To uninstall this module you must turn it off here first.'),
     );
-
     $form['server'] = array(
       '#type'  => 'details',
       '#title' => t('SMTP server settings'),
@@ -169,11 +168,11 @@ class SMTPConfigForm extends ConfigFormBase {
   public function validateForm(array &$form, FormStateInterface $form_state) {
     $values = $form_state->getValues();
 
-    if ($values['smtp_on'] == 1 && $values['smtp_host'] == '') {
+    if ($values['smtp_on'] == 'on' && $values['smtp_host'] == '') {
       $form_state->setErrorByName('smtp_host', $this->t('You must enter an SMTP server address.'));
     }
 
-    if ($values['smtp_on'] == 1 && $values['smtp_port'] == '') {
+    if ($values['smtp_on'] == 'on' && $values['smtp_port'] == '') {
       $form_state->setErrorByName('smtp_port', $this->t('You must enter an SMTP port number.'));
     }
 
@@ -209,7 +208,7 @@ class SMTPConfigForm extends ConfigFormBase {
     if (isset($values['smtp_password'])) {
       $config->set('smtp_password', $values['smtp_password']);
     }
-    $config->set('smtp_on', $values['smtp_on'])
+    $config->set('smtp_on', $values['smtp_on'] == 'on')
       ->set('smtp_host', $values['smtp_host'])
       ->set('smtp_hostbackup', $values['smtp_hostbackup'])
       ->set('smtp_port', $values['smtp_port'])
