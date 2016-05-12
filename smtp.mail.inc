@@ -91,12 +91,17 @@ class SmtpMailSystem implements MailSystemInterface {
     $from_name = FALSE;
     if (function_exists('i18n_variable_get')) {
       $current_provider = smtp_current_provider();
-      if (i18n_variable_get('smtp_fromname_' . $current_provider, $message['language'], '') != '') {
-        $from_name = i18n_variable_get('smtp_fromname_' . $current_provider, $message['language'], '');
+      // The 'language' value may be stored as an object.
+      $langcode = $message['language'];
+      if (is_object($langcode)) {
+        $langcode = $langcode->language;
+      }
+      if (i18n_variable_get('smtp_fromname_' . $current_provider, $langcode, '') != '') {
+        $from_name = i18n_variable_get('smtp_fromname_' . $current_provider, $langcode, '');
       }
       else {
         // If value is not defined in settings, use site_name.
-        $from_name = i18n_variable_get('site_name', $message['language'], '');
+        $from_name = i18n_variable_get('site_name', $langcode, '');
       }
     }
 
