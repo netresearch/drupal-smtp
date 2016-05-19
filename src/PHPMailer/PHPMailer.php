@@ -770,7 +770,7 @@ class PHPMailer {
 
     if (count($bad_rcpt) > 0 ) { //Create error message for any bad addresses
       $badaddresses = implode(', ', $bad_rcpt);
-      throw new phpmailerException(t('SMTP Error: The following recipients failed: !bad', array('!bad' => $badaddresses)));
+      throw new phpmailerException(t('SMTP Error: The following recipients failed: @bad', array('@bad' => $badaddresses)));
     }
     if (!$this->smtp->Data($header . $body)) {
       throw new phpmailerException(t('SMTP Error: Data not accepted.'), self::STOP_CRITICAL);
@@ -1343,7 +1343,7 @@ class PHPMailer {
   public function AddAttachment($path, $name = '', $encoding = 'base64', $type = 'application/octet-stream') {
     try {
       if ( !@is_file($path) ) {
-        throw new phpmailerException(t('Could not access file: !nofile', array('!nofile' => $path)), self::STOP_CONTINUE);
+        throw new phpmailerException(t('Could not access file: @nofile', array('@nofile' => $path)), self::STOP_CONTINUE);
       }
       $filename = basename($path);
       if ( $name == '' ) {
@@ -1467,7 +1467,7 @@ class PHPMailer {
   private function EncodeFile($path, $encoding = 'base64') {
     try {
       if (!is_readable($path)) {
-        throw new phpmailerException(t('File Error: Could not open file: !nofile', array('!nofile' => $path)), self::STOP_CONTINUE);
+        throw new phpmailerException(t('File Error: Could not open file: @nofile', array('@nofile' => $path)), self::STOP_CONTINUE);
       }
       if (function_exists('get_magic_quotes')) {
         function get_magic_quotes() {
@@ -1528,7 +1528,7 @@ class PHPMailer {
         $encoded = $this->EncodeQP($str);
         break;
       default:
-        $this->SetError(t('Unknown encoding: !enc', array('!enc' => $encoding)));
+        $this->SetError(t('Unknown encoding: @enc', array('@enc' => $encoding)));
         break;
     }
     return $encoded;
@@ -1809,7 +1809,7 @@ class PHPMailer {
   public function AddEmbeddedImage($path, $cid, $name = '', $encoding = 'base64', $type = 'application/octet-stream') {
 
     if ( !@is_file($path) ) {
-      $this->SetError(t('Could not access file: !nofile', array('!nofile' => $path)));
+      $this->SetError(t('Could not access file: @nofile', array('@nofile' => $path)));
       return FALSE;
     }
 
@@ -1935,7 +1935,7 @@ class PHPMailer {
     if ($this->Mailer == 'smtp' and !is_null($this->smtp)) {
       $lasterror = $this->smtp->getError();
       if (!empty($lasterror) and array_key_exists('smtp_msg', $lasterror)) {
-        $msg .= '<p>' . t('SMTP server error: !lasterror', array('!lasterror' => $lasterror['smtp_msg'])) . "</p>\n";
+        $msg .= '<p>' . t('SMTP server error: @lasterror', array('@lasterror' => $lasterror['smtp_msg'])) . "</p>\n";
       }
     }
     $this->ErrorInfo = $msg;
