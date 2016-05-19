@@ -421,7 +421,7 @@ class SMTPMailSystem implements MailInterface {
 
               $attachment_new_filename = drupal_tempnam('temporary://', 'smtp');
               $file_path = file_save_data($attachment, $attachment_new_filename, FILE_EXISTS_REPLACE);
-              $real_path = drupal_realpath($file_path->uri);
+              $real_path = \Drupal::service('file_system')->realpath($file_path->uri);
 
               if (!$mailer->AddAttachment($real_path, $file_name)) {
                 drupal_set_message(t('Attachment could not be found or accessed.'));
