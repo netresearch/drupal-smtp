@@ -120,7 +120,7 @@ class SMTPMailSystem implements MailInterface {
 
     $from_comp = $this->_get_components($from);
 
-    if (!valid_email_address($from_comp['email'])) {
+    if (!\Drupal::service('email.validator')->isValid($from_comp['email'])) {
       drupal_set_message(t('The submitted from address (@from) is not valid.', array('@from' => $from)), 'error');
       watchdog('smtp', 'The submitted from address (@from) is not valid.', array('@from' => $from), WATCHDOG_ERROR);
       return FALSE;

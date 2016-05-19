@@ -176,11 +176,11 @@ class SMTPConfigForm extends ConfigFormBase {
       $form_state->setErrorByName('smtp_port', $this->t('You must enter an SMTP port number.'));
     }
 
-    if ($values['smtp_from'] && !valid_email_address($values['smtp_from'])) {
+    if ($values['smtp_from'] && !\Drupal::service('email.validator')->isValid($values['smtp_from'])) {
       $form_state->setErrorByName('smtp_from', $this->t('The provided from e-mail address is not valid.'));
     }
 
-    if ($values['smtp_test_address'] && !valid_email_address($values['smtp_test_address'])) {
+    if ($values['smtp_test_address'] && !\Drupal::service('email.validator')->isValid($values['smtp_test_address'])) {
       $form_state->setErrorByName('smtp_test_address', $this->t('The provided test e-mail address is not valid.'));
     }
 
