@@ -67,7 +67,6 @@ class SMTPMailSystem implements MailInterface {
    *   TRUE if the mail was successfully accepted, otherwise FALSE.
    */
   public function mail(array $message) {
-    $id = $message['id'];
     $to = $message['to'];
     $from = $message['from'];
     $body = $message['body'];
