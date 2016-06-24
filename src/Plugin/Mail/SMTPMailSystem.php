@@ -387,7 +387,7 @@ class SMTPMailSystem implements MailInterface {
                 $attachment = $body_part;
               }
 
-              $attachment_new_filename = drupal_tempnam('temporary://', 'smtp');
+              $attachment_new_filename = \Drupal::service('file_system')->tempnam('temporary://', 'smtp');
               $file_path = file_save_data($attachment, $attachment_new_filename, FILE_EXISTS_REPLACE);
               $real_path = \Drupal::service('file_system')->realpath($file_path->uri);
 
