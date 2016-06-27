@@ -1,10 +1,5 @@
 <?php
 
-/**
- * @file
- * Contains \Drupal\smtp\Form\SMTPConfigForm.
- */
-
 namespace Drupal\smtp\Form;
 
 use Drupal\Core\Form\ConfigFormBase;

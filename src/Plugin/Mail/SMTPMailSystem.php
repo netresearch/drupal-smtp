@@ -1,9 +1,4 @@
 <?php
-/**
- * @file
- * The code processing mail in the smtp module.
- *
- */
 
 namespace Drupal\smtp\Plugin\Mail;
 
