@@ -35,7 +35,7 @@ class SMTPConfigForm extends ConfigFormBase {
     else {
       drupal_set_message(t('SMTP module is INACTIVE.'));
     }
-    drupal_set_message('Disabled fields are overridden in site-specific configuration file.', 'warning');
+    drupal_set_message(t('Disabled fields are overridden in site-specific configuration file.'), 'warning');
 
     $form['onoff'] = array(
       '#type'  => 'details',
