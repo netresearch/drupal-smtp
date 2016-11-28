@@ -40,19 +40,6 @@ function smtp_menu() {
 }
 
 /**
- * Implements hook_permission().
- */
-function smtp_permission() {
-  return array(
-    'administer smtp module' => array(
-      'title' => t('Administer SMTP Authentication Support module'),
-      'description' => t('Perform administration tasks for SMTP Authentication Support module.')
-    ),
-  );
-}
-
-
-/**
  * Implements hook_mail().
  */
 function smtp_mail($key, &$message, $params) {
