@@ -130,6 +130,16 @@ class SMTPMailSystem implements MailInterface, ContainerFactoryPluginInterface {
     $mailer->FromName = $from_name;
     $mailer->Sender = $from;
 
+    $hostname = $this->smtpConfig->get('smtp_client_hostname');
+    if ($hostname != '') {
+      $mailer->Hostname = $hostname;
+    }
+
+    $helo = $this->smtpConfig->get('smtp_client_helo');
+    if ($helo != '') {
+      $mailer->Helo = $helo;
+    }
+
     // Create the list of 'To:' recipients.
     $torecipients = explode(',', $to);
     foreach ($torecipients as $torecipient) {

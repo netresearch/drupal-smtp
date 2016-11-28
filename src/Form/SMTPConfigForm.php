@@ -146,6 +146,26 @@ class SMTPConfigForm extends ConfigFormBase {
       '#disabled' => $this->isOverridden('smtp_allowhtml'),
     );
 
+    $form['client'] = array(
+      '#type'  => 'details',
+      '#title' => t('SMTP client settings'),
+      '#open' => TRUE,
+    );
+    $form['client']['smtp_client_hostname'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Hostname'),
+      '#default_value' => $config->get('smtp_client_hostname'),
+      '#description' => t('The hostname to use in the Message-Id and Received headers, and as the default HELO string. Leave blank for using %server_name.', array('%server_name' => isset($_SERVER['SERVER_NAME']) ? $_SERVER['SERVER_NAME'] : 'localhost.localdomain')),
+      '#disabled' => $this->isOverridden('smtp_client_hostname'),
+    );
+    $form['client']['smtp_client_helo'] = array(
+      '#type' => 'textfield',
+      '#title' => t('HELO'),
+      '#default_value' => $config->get('smtp_client_helo'),
+      '#description' => t('The SMTP HELO/EHLO of the message. Defaults to hostname (see above).'),
+      '#disabled' => $this->isOverridden('smtp_client_helo'),
+    );
+
     $form['email_test'] = array(
       '#type' => 'details',
       '#title' => t('Send test e-mail'),
@@ -240,6 +260,8 @@ class SMTPConfigForm extends ConfigFormBase {
       'smtp_username',
       'smtp_from',
       'smtp_fromname',
+      'smtp_client_hostname',
+      'smtp_client_helo',
       'smtp_allowhtml',
       'smtp_debugging',
     ];
