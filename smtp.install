@@ -34,6 +34,47 @@ function smtp_requirements($phase) {
 }
 
 /**
+ * Implements hook_schema().
+ */
+function smtp_schema() {
+  $schema['smtp_selection_criteria'] = array(
+    'description' => 'Stores criterias for provider selection.',
+    'fields' => array(
+      'cid' => array(
+        'type' => 'serial',
+        'size' => 'big',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'provider' => array(
+        'type' => 'varchar',
+        'length' => 64,
+        'not null' => TRUE,
+      ),
+      'message_module' => array(
+        'type' => 'varchar',
+        'length' => 255,
+      ),
+      'message_key' => array(
+        'type' => 'varchar',
+        'length' => 255,
+      ),
+      'message_language' => array(
+        'type' => 'varchar',
+        'length' => 12,
+      ),
+      'weight' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+    ),
+    'primary key' => array('cid'),
+  );
+  return $schema;
+}
+
+/**
  * Implements hook_install().
  */
  function smtp_install() {
@@ -165,4 +206,12 @@ function smtp_update_7103() {
  */
 function smtp_update_7104() {
   variable_del('smtp_test_address');
+}
+
+/**
+ * Create table to store selection criterias.
+ */
+function smtp_update_7105() {
+  $schema = drupal_get_schema_unprocessed('smtp', 'smtp_selection_criteria');
+  db_create_table('smtp_selection_criteria', $schema);
 }

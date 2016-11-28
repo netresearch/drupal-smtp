@@ -64,8 +64,8 @@ function smtp_admin_settings() {
     }
     $form['providers']['provider_default'] = array(
       '#type'  => 'select',
-      '#title' => t('Enabled provider'),
-      '#description'   => t('Mails will be added to the queue and sent by drupal queue api.'),
+      '#title' => t('Default provider'),
+      '#description'   => t('Mails will be sent by the selected provider when no selection criterias are satisfied.'),
       '#default_value' => variable_get('smtp_default_provider', 'none'),
       '#options' => array_merge(array('none' => 'None'), $options),
     );
@@ -95,6 +95,84 @@ function smtp_admin_settings() {
       ),
       'html' => FALSE,
     )
+  );
+
+  $form['criterias'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Selection criterias'),
+    '#description' => t('Selection criterias are used to select different providers for different situations.') . '<br>'
+                      . t('Criterias will be tested in the order they appear in this table (lowest weight first). The provider selected for the first satisfied criteria will be used.'),
+    '#tree' => TRUE,
+  );
+  $form['criterias']['table'] = array(
+    '#theme' => 'smtp_table',
+    '#header' => array(t('Provider'), t('Criteria'), array('data' => t('Operations'), 'colspan' => 2), t('Weight')),
+    '#attributes' => array(
+      'class' => array('btn'),
+      'id' => 'smtp-selection-criterias-table',
+    ),
+    '#empty' => t('No selection criterias defined yet.'),
+  );
+  $criterias = smtp_list_selection_criterias();
+  foreach ($criterias as $cid => $criteria) {
+    $form['criterias']['table'][$cid] = array(
+      '#attributes' => array(
+        'class' => array('draggable'),
+      ),
+    );
+    $form['criterias']['table'][$cid]['provider'] = array(
+      '#markup' => check_plain($criteria['provider']),
+    );
+    $form['criterias']['table'][$cid]['criteria'] = array(
+      '#theme' => 'smtp_selection_criteria',
+      '#criteria' => $criteria,
+    );
+    $form['criterias']['table'][$cid]['edit'] = array(
+      '#theme' => 'link',
+      '#text' => t('edit'),
+      '#path' => 'admin/config/system/smtp/criteria/' . $criteria['cid'] . '/edit',
+      '#options' => array(
+        'attributes' => array(
+          'class' => array('btn'),
+        ),
+        'html' => FALSE,
+      ),
+    );
+    $form['criterias']['table'][$cid]['delete'] = array(
+      '#theme' => 'link',
+      '#text' => t('delete'),
+      '#path' => 'admin/config/system/smtp/criteria/' . $criteria['cid'] . '/delete',
+      '#options' => array(
+        'attributes' => array(
+          'class' => array('btn'),
+        ),
+        'html' => FALSE,
+      ),
+    );
+    $form['criterias']['table'][$cid]['weight'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Weight'),
+      '#title_display' => 'invisible',
+      '#element_validate' => array('element_validate_integer'),
+      '#attributes' => array(
+        'class' => array('smtp-selection-criteria-weight'),
+      ),
+      '#size' => 3,
+      '#required' => TRUE,
+      '#default_value' => $criteria['weight'],
+    );
+  }
+  $form['#attached']['drupal_add_tabledrag'][] = array('smtp-selection-criterias-table', 'order', 'sibling', 'smtp-selection-criteria-weight');
+  $form['criterias']['new'] = array(
+    '#theme' => 'link',
+    '#text' => t('Add selection criteria'),
+    '#path' => 'admin/config/system/smtp/criteria/add',
+    '#options' => array(
+      'attributes' => array(
+        'class' => array('btn'),
+      ),
+      'html' => FALSE,
+    ),
   );
 
   $form['client'] = array(
@@ -245,6 +323,16 @@ function smtp_admin_settings_form_submit($form, &$form_state) {
   // updated.
   $form_state['storage']['smtp']['smtp_test_address'] = $form_state['values']['smtp_test_address'];
   unset($form_state['values']['smtp_test_address']);
+
+  // Saves criterias' weights
+  if (!empty($form_state['values']['criterias']['table'])) {
+    foreach ($form_state['values']['criterias']['table'] as $cid => $criteria_values) {
+      db_update('smtp_selection_criteria')
+        ->fields(array('weight' => $criteria_values['weight']))
+        ->condition('cid', $cid)
+        ->execute();
+    }
+  }
 }
 
 /**
@@ -492,11 +580,56 @@ function smtp_admin_provider_delete($form, $form_state, $machine_name) {
     drupal_goto('admin/config/system/smtp');
   }
 
+  // Allows user to select an action if there are selection criterias for this provider
+  $criterias = smtp_list_selection_criterias($machine_name);
+  if ($criterias) {
+    $form['criterias_option'] = array(
+      '#type' => 'radios',
+      '#title' => t('There are selection criterias using this provider. What would you like to do?'),
+      '#options' => array(
+        'delete' => t('Delete selection criterias for this provider'),
+      ),
+      '#default_value' => 'delete',
+      '#required' => TRUE,
+    );
+    $replace_options = array();
+    foreach ($providers as $provider) {
+      if ($provider['machine_name'] != $machine_name) {
+        $replace_options[$provider['machine_name']] = $provider['name'];
+      }
+    }
+    // Allows user to replace provider if there are others configured
+    if ($replace_options) {
+      $form['criterias_option']['#options']['replace'] = t('Replace selection criterias\' provider by another');
+      $default_provider = variable_get('smtp_default_provider', '');
+      $form['criterias_replace'] = array(
+        '#type' => 'select',
+        '#title' => t('Select a provider to be used for replacement'),
+        '#options' => $replace_options,
+        '#default_value' => ($default_provider != $machine_name) ? $default_provider : NULL,
+        '#states' => array(
+          'visible' => array(
+            ':input[name="criterias_option"]' => array('value' => 'replace'),
+          ),
+        ),
+      );
+    }
+  }
+
   $form['machine_name'] = array(
     '#type' => 'value',
     '#value' => $machine_name,
   );
   return confirm_form($form, "Are you sure that you want to delete the provider " . $machine_name  . "?", 'admin/config/system/smtp');
+}
+
+function smtp_admin_provider_delete_validate($form, &$form_state) {
+  if (!empty($form_state['values']['criterias_option'])) {
+    // Must select a provider to replace
+    if ($form_state['values']['criterias_option'] == 'replace' && empty($form_state['values']['criterias_replace'])) {
+      form_set_error('criterias_replace', t('Select a provider to be used for replacement.'));
+    }
+  }
 }
 
 function smtp_admin_provider_delete_submit($form, $form_state, $form_id) {
@@ -514,4 +647,177 @@ function smtp_admin_provider_delete_submit($form, $form_state, $form_id) {
   if ($machine_name == $default_provider) {
     variable_del('smtp_default_provider');
   }
+
+  // Perform the chosen action for selection criterias
+  if (!empty($form_state['values']['criterias_option'])) {
+    switch ($form_state['values']['criterias_option']) {
+      case 'delete':
+        db_delete('smtp_selection_criteria')
+          ->condition('provider', $machine_name)
+          ->execute();
+        break;
+      case 'replace':
+        db_update('smtp_selection_criteria')
+          ->fields(array('provider' => $form_state['values']['criterias_replace']))
+          ->condition('provider', $machine_name)
+          ->execute();
+        break;
+    }
+  }
+}
+
+/**
+ * Administrative settings.
+ *
+ * @param form
+ *   An associative array containing the structure of the form.
+ * @param form_state
+ *   A keyed array containing the current state of the form.
+ * @param criteria
+ *   The selection criteria being edited.
+ *
+ * @return
+ *   An array containing form items to place on the selection criteria edit page.
+ */
+function smtp_admin_criteria_settings($form, &$form_state, $criteria = NULL) {
+  $form_state['storage']['criteria'] = $criteria;
+
+  $providers = variable_get('smtp_providers', array());
+  $provider_options = array();
+  foreach ($providers as $machine_name => $provider) {
+    $provider_options[$machine_name] = $provider['name'];
+  }
+  $form['provider'] = array(
+    '#type' => 'select',
+    '#title' => t('Provider'),
+    '#description' => t('Provider to be used when this criteria is satisfied.'),
+    '#options' => $provider_options,
+    '#required' => TRUE,
+    '#default_value' => isset($criteria['provider']) ? $criteria['provider'] : NULL,
+  );
+
+  $form['message'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Message conditions'),
+    '#tree' => TRUE,
+  );
+  $form['message']['module'] = array(
+    '#type' => 'select',
+    '#title' => t('Module'),
+    '#description' => t('Messages sent by the selected module.'),
+    '#options' => array('' => t('Any')) + module_list(FALSE, FALSE, TRUE),
+    '#default_value' => isset($criteria['message_module']) ? $criteria['message_module'] : '',
+  );
+  $form['message']['key'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Key', array(), array('context' => 'identifier')),
+    '#description' => t('The key provided to <a href="https://api.drupal.org/api/drupal/includes!mail.inc/function/drupal_mail/7.x" target="_blank">drupal_mail()</a>. Leave it blank for any value.'),
+    '#default_value' => isset($criteria['message_key']) ? $criteria['message_key'] : '',
+  );
+  $language_options = array('' => t('Any'));
+  foreach (language_list() as $code => $language) {
+    $language_options[$code] = $language->name;
+  }
+  $form['message']['language'] = array(
+    '#type' => 'select',
+    '#title' => t('Language'),
+    '#description' => t('The message\'s language.'),
+    '#options' => $language_options,
+    '#default_value' => isset($criteria['message_language']) ? $criteria['message_language'] : '',
+  );
+
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Save'),
+  );
+
+  return $form;
+}
+
+/**
+ * Submit handler.
+ *
+ * @param form
+ *   An associative array containing the structure of the form.
+ * @param form_state
+ *   A keyed array containing the current state of the form.
+ */
+function smtp_admin_criteria_settings_submit($form, &$form_state) {
+  if (isset($form_state['storage']['criteria']['weight'])) {
+    // Do not change the weight of previously created criterias
+    $weight = $form_state['storage']['criteria']['weight'];
+  }
+  else {
+    // New criteria receives the highest weight
+    $query = db_select('smtp_selection_criteria', 'c');
+    $query ->addExpression('MAX(weight) + 1', 'next_weight');
+    $result = $query->execute()->fetchAssoc();
+    $weight = isset($result['next_weight']) ? $result['next_weight'] : 0;
+  }
+
+  // Fields to be updated
+  $fields = array(
+    'provider' => $form_state['values']['provider'],
+    'weight' => $weight,
+  );
+  foreach ($form_state['values']['message'] as $key => $value) {
+    $fields["message_$key"] = $value;
+  }
+
+  if (empty($form_state['storage']['criteria'])) {
+    // New criteria
+    $result = db_insert('smtp_selection_criteria')
+      ->fields($fields)
+      ->execute();
+  }
+  else {
+    // Update
+    $result = db_update('smtp_selection_criteria')
+      ->fields($fields)
+      ->condition('cid', $form_state['storage']['criteria']['cid'])
+      ->execute();
+  }
+
+  // Go back to the configuration form
+  drupal_goto("admin/config/system/smtp");
+}
+
+
+
+/**
+ * Delete selection criteria.
+ *
+ * @param form
+ *   An associative array containing the structure of the form.
+ * @param form_state
+ *   A keyed array containing the current state of the form.
+ * @param criteria
+ *   The selection criteria being edited.
+ *
+ * @return
+ *   An array containing form items to place on the selection criteria deletion page.
+ */
+function smtp_admin_criteria_delete($form, $form_state, $criteria) {
+  $form['cid'] = array(
+    '#type' => 'value',
+    '#value' => $criteria['cid'],
+  );
+  return confirm_form($form, 'Are you sure that you want to delete this selection criteria?', 'admin/config/system/smtp');
+}
+
+/**
+ * Submit handler.
+ *
+ * @param form
+ *   An associative array containing the structure of the form.
+ * @param form_state
+ *   A keyed array containing the current state of the form.
+ */
+function smtp_admin_criteria_delete_submit($form, $form_state) {
+  $result = db_delete('smtp_selection_criteria')
+    ->condition('cid', $form_state['values']['cid'])
+    ->execute();
+
+  // Go back to the configuration form
+  drupal_goto("admin/config/system/smtp");
 }

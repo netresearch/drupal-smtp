@@ -66,6 +66,15 @@ class SmtpMailSystem implements MailSystemInterface {
     $headers = $message['headers'];
     $subject = $message['subject'];
 
+    // Gets prefered or default provider
+    if ($current_provider = smtp_prefered_provider($message)) {
+      smtp_current_provider($current_provider);
+    }
+    else {
+      // Use default provider
+      $current_provider = smtp_current_provider();
+    }
+
     // Optionally reroute all emails to a single address.
     $reroute_address = variable_get('smtp_reroute_address', '');
     if (!empty($reroute_address)) {
@@ -90,7 +99,6 @@ class SmtpMailSystem implements MailSystemInterface {
     // of the email being sent.
     $from_name = FALSE;
     if (function_exists('i18n_variable_get')) {
-      $current_provider = smtp_current_provider();
       // The 'language' value may be stored as an object.
       $langcode = $message['language'];
       if (is_object($langcode)) {
