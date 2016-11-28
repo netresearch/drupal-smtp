@@ -258,8 +258,11 @@ class SMTPConfigForm extends ConfigFormBase {
       $mail_config->set('interface.default', $mail_system)->save();
     }
     else {
-      $mail_system = $config->get('prev_mail_system');
-      $mail_config->set('interface.default', $mail_system)->save();
+      $default_system_mail = 'php_mail';
+      $mail_config = $this->configFactory->getEditable('system.mail');
+      $default_interface = ($mail_config->get('prev_mail_system')) ? $mail_config->get('prev_mail_system') : $default_system_mail;
+      $mail_config->set('interface.default', $default_interface)
+        ->save();
     }
 
     // If an address was given, send a test e-mail message.
