@@ -355,7 +355,7 @@ function smtp_drupal_mail_wrapper($message) {
 
 
   // Turn in debugging, if requested.
-  if (variable_get('smtp_debugging', 0) == 1) {
+  if (variable_get('smtp_debugging', 0) == 1 && user_access('administer smtp module')) {
     $mail->SMTPDebug = TRUE;
   }
 
