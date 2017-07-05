@@ -497,11 +497,6 @@ function smtp_provider_machine_name_exist($value, $element, $form_state) {
 
 /**
  * Validation for the administrative settings form.
- *
- * @param form
- *   An associative array containing the structure of the form.
- * @param form_state
- *   A keyed array containing the current state of the form.
  */
 function smtp_admin_provider_settings_validate($form, &$form_state) {
   if ($form_state['values']['smtp_port'] == '') {
