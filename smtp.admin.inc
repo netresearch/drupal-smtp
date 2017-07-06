@@ -25,7 +25,7 @@ function smtp_admin_settings() {
   $form['onoff']['smtp_on'] = array(
     '#type'          => 'radios',
     '#title'         => t('Turn this module on or off'),
-    '#default_value' => variable_get('smtp_on', FALSE),
+    '#default_value' => variable_get('smtp_on', 0),
     '#options'       => array(1 => t('On'), 0 => t('Off')),
     '#description'   => t('To uninstall this module you must turn it off here first.'),
   );
