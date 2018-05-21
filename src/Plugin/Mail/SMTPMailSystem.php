@@ -549,35 +549,35 @@ class SMTPMailSystem implements MailInterface, ContainerFactoryPluginInterface {
   protected function _remove_headers($input) {
     $part_array = explode("\n", $input);
 
-    // will strip these headers according to RFC2045
+    // Will strip these headers according to RFC2045.
     $headers_to_strip = ['Content-Type', 'Content-Transfer-Encoding', 'Content-ID', 'Content-Disposition'];
     $pattern = '/^(' . implode('|', $headers_to_strip) . '):/';
 
     while (count($part_array) > 0) {
 
-      // ignore trailing spaces/newlines
+      // Ignore trailing spaces/newlines.
       $line = rtrim($part_array[0]);
 
-      // if the line starts with a known header string
+      // If the line starts with a known header string.
       if (preg_match($pattern, $line)) {
         $line = rtrim(array_shift($part_array));
-        // remove line containing matched header.
+        // Remove line containing matched header.
 
-        // if line ends in a ';' and the next line starts with four spaces, it's a continuation
+        // If line ends in a ';' and the next line starts with four spaces, it's a continuation
         // of the header split onto the next line. Continue removing lines while we have this condition.
         while (substr($line, -1) == ';' && count($part_array) > 0 && substr($part_array[0], 0, 4) == '    ') {
           $line = rtrim(array_shift($part_array));
         }
       }
       else {
-        // no match header, must be past headers; stop searching.
+        // No match header, must be past headers; stop searching.
         break;
       }
     }
 
     $output = implode("\n", $part_array);
     return $output;
-  }  //  End of _smtp_remove_headers().
+  }
 
   /**
    * Returns a string that is contained within another string.
@@ -609,7 +609,7 @@ class SMTPMailSystem implements MailInterface, ContainerFactoryPluginInterface {
     }
 
     return $substring;
-  }  //  End of _smtp_get_substring().
+  }
 
   /**
    * Returns an array of name and email address from a string.
