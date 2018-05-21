@@ -215,8 +215,8 @@ class SMTPMailSystem implements MailInterface, ContainerFactoryPluginInterface {
             break;
             default:
               // Everything else is unsuppored by PHPMailer.
-              drupal_set_message(t('The %header of your message is not supported by PHPMailer and will be sent as text/plain instead.', array('%header' => "Content-Type: $value")), 'error');
-              $this->logger->error(t('The %header of your message is not supported by PHPMailer and will be sent as text/plain instead.', array('%header' => "Content-Type: $value")));
+              drupal_set_message(t('The %header of your message is not supported by PHPMailer and will be sent as text/plain instead.', ['%header' => "Content-Type: $value"]), 'error');
+              $this->logger->error(t('The %header of your message is not supported by PHPMailer and will be sent as text/plain instead.', ['%header' => "Content-Type: $value"]));
 
               // Force the Content-Type to be text/plain.
               $mailer->IsHTML(FALSE);
@@ -489,13 +489,13 @@ class SMTPMailSystem implements MailInterface, ContainerFactoryPluginInterface {
     $mailer->Port = $this->smtpConfig->get('smtp_port');
     $mailer->Mailer = 'smtp';
 
-    $mailerArr = array(
+    $mailerArr = [
       'mailer' => $mailer,
       'to' => $to,
       'from' => $from,
-    );
+    ];
     if ($this->smtpConfig->get('smtp_queue')) {
-      $this->logger->info(t('Queue sending mail to: @to', array('@to' => $to)));
+      $this->logger->info(t('Queue sending mail to: @to', ['@to' => $to]));
       smtp_send_queue($mailerArr);
     }
     else {
@@ -519,7 +519,7 @@ class SMTPMailSystem implements MailInterface, ContainerFactoryPluginInterface {
    *   An array containing the resulting mime parts
    */
   protected function _boundary_split($input, $boundary) {
-    $parts       = array();
+    $parts       = [];
     $bs_possible = substr($boundary, 2, -2);
     $bs_check    = '\"' . $bs_possible . '\"';
 
@@ -550,7 +550,7 @@ class SMTPMailSystem implements MailInterface, ContainerFactoryPluginInterface {
     $part_array = explode("\n", $input);
 
     // will strip these headers according to RFC2045
-    $headers_to_strip = array( 'Content-Type', 'Content-Transfer-Encoding', 'Content-ID', 'Content-Disposition');
+    $headers_to_strip = ['Content-Type', 'Content-Transfer-Encoding', 'Content-ID', 'Content-Disposition'];
     $pattern = '/^(' . implode('|', $headers_to_strip) . '):/';
 
     while (count($part_array) > 0) {
@@ -621,11 +621,11 @@ class SMTPMailSystem implements MailInterface, ContainerFactoryPluginInterface {
    *  An array containing a name and an email address.
    */
   protected function _get_components($input) {
-    $components = array(
+    $components = [
       'input' => $input,
       'name' => '',
       'email' => '',
-    );
+    ];
 
     // If the input is a valid email address in its entirety, then there is
     // nothing to do, just return that.
