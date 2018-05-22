@@ -14,6 +14,8 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
  * Validate requirements for ProceedingsRealmNegotiator.
+ *
+ * @group SMTP
  */
 class SMTPConfigFormTest extends UnitTestCase {
 
@@ -91,6 +93,5 @@ class SMTPConfigFormTest extends UnitTestCase {
     $formBuilder->buildForm($form, new FormState());
     $this->mockMessenger->addMessage(Argument::which('getUntranslatedString', 'SMTP module is INACTIVE.'))->shouldHaveBeenCalled();
   }
-
 
 }
