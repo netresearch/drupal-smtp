@@ -63,6 +63,7 @@ class SMTPConfigForm extends ConfigFormBase {
     else {
       $this->messenger->addMessage($this->t('SMTP module is INACTIVE.'));
     }
+
     $this->messenger->addMessage($this->t('Disabled fields are overridden in site-specific configuration file.'), 'warning');
 
     $form['onoff'] = [
@@ -107,6 +108,7 @@ class SMTPConfigForm extends ConfigFormBase {
         [':url' => 'http://gmail.google.com/support/bin/answer.py?answer=13287']),
       '#disabled' => $this->isOverridden('smtp_port'),
     ];
+
     // Only display the option if openssl is installed.
     if (function_exists('openssl_open')) {
       $encryption_options = [
@@ -123,6 +125,7 @@ class SMTPConfigForm extends ConfigFormBase {
       $encryption_description = $this->t('Your PHP installation does not have SSL enabled. See the :url page on php.net for more information. Gmail requires SSL.',
         [':url' => 'http://php.net/openssl']);
     }
+
     $form['server']['smtp_protocol'] = [
       '#type' => 'select',
       '#title' => $this->t('Use encrypted protocol'),
