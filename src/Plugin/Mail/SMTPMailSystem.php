@@ -127,7 +127,7 @@ class SMTPMailSystem implements MailInterface, ContainerFactoryPluginInterface {
 
     // Defines the From value to what we expect.
     $mailer->From = $from;
-    $mailer->FromName = $from_name;
+    $mailer->FromName = Unicode::mimeHeaderEncode($from_name);
     $mailer->Sender = $from;
 
     $hostname = $this->smtpConfig->get('smtp_client_hostname');
@@ -228,7 +228,7 @@ class SMTPMailSystem implements MailInterface, ContainerFactoryPluginInterface {
           // Only add a "reply-to" if it's not the same as "return-path".
           if ($value != $headers['Return-Path']) {
             $reply_to_comp = $this->_get_components($value);
-            $mailer->AddReplyTo($reply_to_comp['email'], $reply_to_comp['name']);
+            $mailer->AddReplyTo($reply_to_comp['email'], Unicode::mimeHeaderEncode($reply_to_comp['name']));
           }
           break;
 
@@ -253,7 +253,7 @@ class SMTPMailSystem implements MailInterface, ContainerFactoryPluginInterface {
           $ccrecipients = explode(',', $value);
           foreach ($ccrecipients as $ccrecipient) {
             $cc_comp = $this->_get_components($ccrecipient);
-            $mailer->AddCC($cc_comp['email'], $cc_comp['name']);
+            $mailer->AddCC($cc_comp['email'], Unicode::mimeHeaderEncode($cc_comp['name']));
           }
           break;
 
@@ -261,7 +261,7 @@ class SMTPMailSystem implements MailInterface, ContainerFactoryPluginInterface {
           $bccrecipients = explode(',', $value);
           foreach ($bccrecipients as $bccrecipient) {
             $bcc_comp = $this->_get_components($bccrecipient);
-            $mailer->AddBCC($bcc_comp['email'], $bcc_comp['name']);
+            $mailer->AddBCC($bcc_comp['email'], Unicode::mimeHeaderEncode($bcc_comp['name']));
           }
           break;
 
@@ -287,7 +287,7 @@ class SMTPMailSystem implements MailInterface, ContainerFactoryPluginInterface {
      * }
      */
     // Add the message's subject.
-    $mailer->Subject = $subject;
+    $mailer->Subject = Unicode::mimeHeaderEncode($subject);
 
     // Processes the message's body.
     switch ($content_type) {
