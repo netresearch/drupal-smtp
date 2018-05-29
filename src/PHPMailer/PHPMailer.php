@@ -1,5 +1,7 @@
 <?php
 
+// @codingStandardsIgnoreFile
+
 /*~ class.phpmailer.php
 Orginal release information:
 .---------------------------------------------------------------------------.
