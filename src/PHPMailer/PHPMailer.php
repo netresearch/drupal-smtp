@@ -462,7 +462,7 @@ class PHPMailer {
     if (!self::ValidateAddress($address)) {
       $this->SetError(t('Invalid address') . ': ' . $address);
       if ($this->exceptions) {
-        throw new PHPMailerException(t('Invalid address') . ': ' . $address);
+        throw new PHPMailerException(t('Invalid address: @address', ['address' => $address]));
       }
       echo t('Invalid address') . ': ' . $address;
       return FALSE;
