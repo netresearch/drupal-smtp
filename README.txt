@@ -4,7 +4,7 @@ This module adds SMTP functionality to Drupal.
 REQUIREMENTS
 ------------
 * Access to an SMTP server
-* The following PHP extensions need to be installed: ereg, hash, date & pcre.
+* The following PHP extensions need to be installed: hash, date & pcre.
 
 * Optional: To connect to an SMTP server using SSL, you need to have the
   openssl package installed on your server, and your webserver and PHP
