@@ -2,7 +2,7 @@
 
 namespace Drupal\smtp\Plugin\Exception;
 
-class phpmailerException extends \Exception {
+class PHPMailerException extends \Exception {
   public function errorMessage() {
     $errorMsg = '<strong>' . $this->getMessage() . "</strong><br />\n";
     return $errorMsg;
