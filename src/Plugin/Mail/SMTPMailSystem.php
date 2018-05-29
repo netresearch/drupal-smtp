@@ -334,6 +334,7 @@ class SMTPMailSystem implements MailInterface, ContainerFactoryPluginInterface {
           // $mailer->AltBody or $mailer->Body, depending on whether there is
           // also a text/html part ot not.
           if (strpos($body_part, 'multipart/alternative')) {
+
             // Get boundary ID from the Content-Type header.
             $boundary2 = $this->_get_substring($body_part, 'boundary', '"', '"');
             // Clean up the text.
@@ -342,6 +343,7 @@ class SMTPMailSystem implements MailInterface, ContainerFactoryPluginInterface {
             $body_parts2 = $this->_boundary_split($body_part, $boundary2);
 
             foreach ($body_parts2 as $body_part2) {
+
               // If plain/text within the body part, add it to $mailer->AltBody.
               if (strpos($body_part2, 'text/plain')) {
                 // Clean up the text.
@@ -356,6 +358,7 @@ class SMTPMailSystem implements MailInterface, ContainerFactoryPluginInterface {
                 $body_part2_encoding = $this->_get_substring($body_part2, 'Content-Transfer-Encoding', ' ', "\n");
                 // Clean up the text.
                 $body_part2 = trim($this->_remove_headers(trim($body_part2)));
+
                 // Check whether the encoding is base64, and if so, decode it.
                 if (Unicode::strtolower($body_part2_encoding) == 'base64') {
                   // Include it as part of the mail object.
@@ -371,6 +374,7 @@ class SMTPMailSystem implements MailInterface, ContainerFactoryPluginInterface {
               }
             }
           }
+
           // If text/plain within the body part, add it to $mailer->Body.
           elseif (strpos($body_part, 'text/plain')) {
             // Clean up the text.
