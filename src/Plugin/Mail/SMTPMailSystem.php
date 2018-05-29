@@ -321,13 +321,9 @@ class SMTPMailSystem implements MailInterface, ContainerFactoryPluginInterface {
         // Split the body based on the boundary ID.
         $body_parts = $this->_boundary_split($body, $boundary);
 
-        // Determine if there is an HTML part for when adding the plain text part.
-        $text_plain = FALSE;
+        // Determine if there is an HTML part.
         $text_html  = FALSE;
         foreach ($body_parts as $body_part) {
-          if (strpos($body_part, 'text/plain')) {
-            $text_plain = TRUE;
-          }
           if (strpos($body_part, 'text/html')) {
             $text_html = TRUE;
           }
