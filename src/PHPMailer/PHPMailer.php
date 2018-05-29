@@ -460,11 +460,12 @@ class PHPMailer {
     $address = trim($address);
     $name = trim(preg_replace('/[\r\n]+/', '', $name)); //Strip breaks and trim
     if (!self::ValidateAddress($address)) {
-      $this->SetError(t('Invalid address') . ': ' . $address);
+      $invalidAddress = t('Invalid address: @address', ['address' => $address]);
+      $this->SetError($invalidAddress);
       if ($this->exceptions) {
-        throw new PHPMailerException(t('Invalid address: @address', ['address' => $address]));
+        throw new PHPMailerException($invalidAddress);
       }
-      echo t('Invalid address') . ': ' . $address;
+      echo $invalidAddress;
       return FALSE;
     }
     if ($kind != 'ReplyTo') {
