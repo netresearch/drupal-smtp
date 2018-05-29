@@ -2,11 +2,11 @@
 
 namespace Drupal\smtp\Form;
 
+use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\smtp\Plugin\Mail\SMTPMailSystem;
 use Drupal\Core\Messenger\Messenger;
-use Drupal\Core\Config\ConfigFactoryInterface;
+use Drupal\smtp\Plugin\Mail\SMTPMailSystem;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
