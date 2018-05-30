@@ -615,7 +615,7 @@ class PHPMailer {
     if ($this->SingleTo === TRUE) {
       foreach ($this->SingleToArray as $key => $val) {
         if (!@$mail = popen($sendmail, 'w')) {
-          throw new PHPMailerException(t('Could not execute: !smail', array('!smail' => $this->Sendmail)), self::STOP_CRITICAL);
+          throw new PHPMailerException(t('Could not execute: @smail', array('@smail' => $this->Sendmail)), self::STOP_CRITICAL);
         }
         fputs($mail, "To: " . $val . "\n");
         fputs($mail, $header);
@@ -625,13 +625,13 @@ class PHPMailer {
         $isSent = ($result == 0) ? 1 : 0;
         $this->doCallback($isSent, $val, $this->cc, $this->bcc, $this->Subject, $body);
         if ($result != 0) {
-          throw new PHPMailerException(t('Could not execute: !smail', array('!smail' => $this->Sendmail)), self::STOP_CRITICAL);
+          throw new PHPMailerException(t('Could not execute: @smail', array('@smail' => $this->Sendmail)), self::STOP_CRITICAL);
         }
       }
     }
     else {
       if (!@$mail = popen($sendmail, 'w')) {
-        throw new PHPMailerException(t('Could not execute: !smail', array('!smail' => $this->Sendmail)), self::STOP_CRITICAL);
+        throw new PHPMailerException(t('Could not execute: @smail', array('@smail' => $this->Sendmail)), self::STOP_CRITICAL);
       }
       fputs($mail, $header);
       fputs($mail, $body);
@@ -640,7 +640,7 @@ class PHPMailer {
       $isSent = ($result == 0) ? 1 : 0;
       $this->doCallback($isSent, $this->to, $this->cc, $this->bcc, $this->Subject, $body);
       if ($result != 0) {
-        throw new PHPMailerException(t('Could not execute: !smail', array('!smail' => $this->Sendmail)), self::STOP_CRITICAL);
+        throw new PHPMailerException(t('Could not execute: @smail', array('@smail' => $this->Sendmail)), self::STOP_CRITICAL);
       }
     }
     return TRUE;
@@ -721,7 +721,7 @@ class PHPMailer {
     }
     $smtp_from = ($this->Sender == '') ? $this->From : $this->Sender;
     if (!$this->smtp->Mail($smtp_from)) {
-      throw new PHPMailerException(t('The following From address failed: !from', array('!from' => $smtp_from)), self::STOP_CRITICAL);
+      throw new PHPMailerException(t('The following From address failed: @from', array('@from' => $smtp_from)), self::STOP_CRITICAL);
     }
 
     // Attempt to send attach all recipients
@@ -1240,7 +1240,7 @@ class PHPMailer {
         else {
           @unlink($file);
           @unlink($signed);
-          throw new PHPMailerException(t('Signing Error: !err', array('!err' => openssl_error_string())));
+          throw new PHPMailerException(t('Signing Error: @err', array('@err' => openssl_error_string())));
         }
       } catch (PHPMailerException $e) {
         $body = '';
