@@ -34,7 +34,7 @@ Orginal release information:
 namespace Drupal\smtp\PHPMailer;
 
 use Drupal\smtp\PHPMailer\SMTP;
-use Drupal\smtp\Plugin\Exception\PHPMailerException;
+use Drupal\smtp\Exception\PHPMailerException;
 
 /**
  * PHPMailer - PHP email transport class
