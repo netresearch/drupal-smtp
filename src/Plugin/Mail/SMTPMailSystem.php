@@ -6,10 +6,10 @@ use Drupal\Component\Utility\Unicode;
 use Drupal\Core\Logger\LoggerChannelFactoryInterface;
 use Drupal\Core\Mail\MailFormatHelper;
 use Drupal\Core\Mail\MailInterface;
-use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
-use Drupal\smtp\PHPMailer\PHPMailer;
-use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\Core\Messenger\Messenger;
+use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
+use Symfony\Component\DependencyInjection\ContainerInterface;
+use Drupal\smtp\PHPMailer\PHPMailer;
 
 /**
  * Modify the drupal mail system to use smtp when sending emails.
@@ -658,6 +658,7 @@ class SMTPMailSystem implements MailInterface, ContainerFactoryPluginInterface {
    *   An array containing a name and an email address.
    */
   protected function getComponents($input) {
+    $input = trim($input);
     $components = [
       'input' => $input,
       'name' => '',
@@ -666,8 +667,8 @@ class SMTPMailSystem implements MailInterface, ContainerFactoryPluginInterface {
 
     // If the input is a valid email address in its entirety,
     // then there is nothing to do, just return that.
-    if (\Drupal::service('email.validator')->isValid(trim($input))) {
-      $components['email'] = trim($input);
+    if (\Drupal::service('email.validator')->isValid($input)) {
+      $components['email'] = $input;
       return $components;
     }
 
@@ -675,7 +676,7 @@ class SMTPMailSystem implements MailInterface, ContainerFactoryPluginInterface {
     // some name <address@example.com>.
     // "another name" <address@example.com>.
     // <address@example.com>.
-    if (preg_match('/^"?([^"\t\n]*)"?\s*<([^>\t\n]*)>$/', trim($input), $matches)) {
+    if (preg_match('/^"?([^"\t\n]*)"?\s*<([^>\t\n]*)>$/', $input, $matches)) {
       $components['name'] = trim($matches[1]);
       $components['email'] = trim($matches[2]);
     }
