@@ -8,12 +8,13 @@ use Drupal\Core\Mail\MailFormatHelper;
 use Drupal\Core\Mail\MailInterface;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Drupal\smtp\PHPMailer\PHPMailer;
-use Psr\Log\LoggerInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
+use Drupal\Core\Messenger\Messenger;
 
 /**
  * Modify the drupal mail system to use smtp when sending emails.
- * Include the option to choose between plain text or HTML
+ *
+ * Include the option to choose between plain text or HTML.
  *
  * @Mail(
  *   id = "SMTPMailSystem",
@@ -26,21 +27,37 @@ class SMTPMailSystem implements MailInterface, ContainerFactoryPluginInterface {
   protected $smtpConfig;
 
   /**
-   * Logger
-   * @var LoggerInterface
+   * Logger.
+   *
+   * @var \Drupal\Core\Logger\LoggerChannelFactoryInterface
    */
   protected $logger;
 
   /**
-   * Constructs a SMPTMailSystem object.
-   * @param array $configuration
-   * @param $plugin_id
-   * @param $plugin_definition
-   * @param \Psr\Log\LoggerInterface $logger
+   * Messenger.
+   *
+   * @var \Drupal\Core\Messenger\Messenger
    */
-  public function __construct(array $configuration, $plugin_id, $plugin_definition, LoggerChannelFactoryInterface $logger) {
+  protected $messenger;
+
+  /**
+   * Constructs a SMPTMailSystem object.
+   *
+   * @param array $configuration
+   *   The configuration array.
+   * @param string $plugin_id
+   *   The plug-in ID.
+   * @param mixed $plugin_definition
+   *   The plug-in definition.
+   * @param \Drupal\Core\Logger\LoggerChannelFactoryInterface $logger
+   *   The logger object.
+   * @param \Drupal\Core\Messenger\Messenger $messenger
+   *   The messenger object.
+   */
+  public function __construct(array $configuration, $plugin_id, $plugin_definition, LoggerChannelFactoryInterface $logger, Messenger $messenger) {
     $this->smtpConfig = \Drupal::config('smtp.settings');
     $this->logger = $logger;
+    $this->messenger = $messenger;
   }
 
   /**
@@ -59,17 +76,16 @@ class SMTPMailSystem implements MailInterface, ContainerFactoryPluginInterface {
    *   Returns an instance of this plugin.
    */
   public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition) {
-    return new static($configuration, $plugin_id, $plugin_definition, $container->get('logger.factory'));
+    return new static($configuration, $plugin_id, $plugin_definition, $container->get('logger.factory'), $container->get('messenger'));
   }
 
   /**
-   * Concatenate and wrap the e-mail body for either
-   * plain-text or HTML emails.
+   * Concatenate and wrap the e-mail body for either plain-text or HTML emails.
    *
-   * @param $message
+   * @param array $message
    *   A message array, as described in hook_mail_alter().
    *
-   * @return
+   * @return array
    *   The formatted $message.
    */
   public function format(array $message) {
@@ -88,12 +104,13 @@ class SMTPMailSystem implements MailInterface, ContainerFactoryPluginInterface {
   /**
    * Send the e-mail message.
    *
-   * @see drupal_mail()
-   *
-   * @param $message
+   * @param array $message
    *   A message array, as described in hook_mail_alter().
-   * @return
+   *
+   * @return mixed
    *   TRUE if the mail was successfully accepted, otherwise FALSE.
+   *
+   * @see drupal_mail()
    */
   public function mail(array $message) {
     $to = $message['to'];
@@ -119,10 +136,10 @@ class SMTPMailSystem implements MailInterface, ContainerFactoryPluginInterface {
 
     // Set SMTP module email from.
     if (\Drupal::service('email.validator')->isValid($this->smtpConfig->get('smtp_from'))) {
-        $from = $this->smtpConfig->get('smtp_from');
-        $headers['Sender'] = $from;
-        $headers['Return-Path'] = $from;
-        $headers['Reply-To'] = $from;
+      $from = $this->smtpConfig->get('smtp_from');
+      $headers['Sender'] = $from;
+      $headers['Return-Path'] = $from;
+      $headers['Reply-To'] = $from;
     }
 
     // Defines the From value to what we expect.
@@ -143,30 +160,32 @@ class SMTPMailSystem implements MailInterface, ContainerFactoryPluginInterface {
     // Create the list of 'To:' recipients.
     $torecipients = explode(',', $to);
     foreach ($torecipients as $torecipient) {
-      $to_comp = $this->_get_components($torecipient);
+      $to_comp = $this->getComponents($torecipient);
       $mailer->AddAddress($to_comp['email'], $to_comp['name']);
     }
 
     // Parse the headers of the message and set the PHPMailer object's settings
     // accordingly.
     foreach ($headers as $key => $value) {
-      //watchdog('error', 'Key: ' . $key . ' Value: ' . $value);
+      // watchdog('error', 'Key: ' . $key . ' Value: ' . $value);.
       switch (strtolower($key)) {
         case 'from':
           if ($from == NULL or $from == '') {
             // If a from value was already given, then set based on header.
-            // Should be the most common situation since drupal_mail moves the
+            // Should be the most common situation since drupal_mail moves the.
             // from to headers.
-            $from           = $value;
-            $mailer->From     = $value;
-            // then from can be out of sync with from_name !
+            $from = $value;
+            $mailer->From = $value;
+            // Then from can be out of sync with from_name!
             $mailer->FromName = '';
-            $mailer->Sender   = $value;
+            $mailer->Sender = $value;
           }
           break;
+
         case 'content-type':
-          // Parse several values on the Content-type header, storing them in an array like
-          // key=value -> $vars['key']='value'
+          // Parse several values on the Content-type header,
+          // storing them in an array like.
+          // key=value -> $vars['key']='value'.
           $vars = explode(';', $value);
           foreach ($vars as $i => $var) {
             if ($cut = strpos($var, '=')) {
@@ -176,10 +195,12 @@ class SMTPMailSystem implements MailInterface, ContainerFactoryPluginInterface {
               $vars[$new_key] = $new_var;
             }
           }
-          // Set the charset based on the provided value, otherwise set it to UTF-8 (which is Drupals internal default).
+          // Set the charset based on the provided value,
+          // otherwise set it to UTF-8 (which is Drupals internal default).
           $mailer->CharSet = isset($vars['charset']) ? $vars['charset'] : 'UTF-8';
-          // If $vars is empty then set an empty value at index 0 to avoid a PHP warning in the next statement
-          $vars[0] = isset($vars[0])?$vars[0]:'';
+          // If $vars is empty then set an empty value at index 0,
+          // to avoid a PHP warning in the next statement.
+          $vars[0] = isset($vars[0]) ? $vars[0] : '';
 
           switch ($vars[0]) {
             case 'text/plain':
@@ -187,35 +208,40 @@ class SMTPMailSystem implements MailInterface, ContainerFactoryPluginInterface {
               $mailer->IsHTML(FALSE);
               $content_type = 'text/plain';
               break;
+
             case 'text/html':
               // The message includes only an HTML part.
               $mailer->IsHTML(TRUE);
               $content_type = 'text/html';
               break;
+
             case 'multipart/related':
               // Get the boundary ID from the Content-Type header.
-              $boundary = $this->_get_substring($value, 'boundary', '"', '"');
+              $boundary = $this->getSubstring($value, 'boundary', '"', '"');
 
               // The message includes an HTML part w/inline attachments.
               $mailer->ContentType = $content_type = 'multipart/related; boundary="' . $boundary . '"';
-            break;
+              break;
+
             case 'multipart/alternative':
               // The message includes both a plain text and an HTML part.
               $mailer->ContentType = $content_type = 'multipart/alternative';
 
               // Get the boundary ID from the Content-Type header.
-              $boundary = $this->_get_substring($value, 'boundary', '"', '"');
-            break;
+              $boundary = $this->getSubstring($value, 'boundary', '"', '"');
+              break;
+
             case 'multipart/mixed':
               // The message includes one or more attachments.
               $mailer->ContentType = $content_type = 'multipart/mixed';
 
               // Get the boundary ID from the Content-Type header.
-              $boundary = $this->_get_substring($value, 'boundary', '"', '"');
-            break;
+              $boundary = $this->getSubstring($value, 'boundary', '"', '"');
+              break;
+
             default:
               // Everything else is unsuppored by PHPMailer.
-              drupal_set_message(t('The %header of your message is not supported by PHPMailer and will be sent as text/plain instead.', ['%header' => "Content-Type: $value"]), 'error');
+              $this->messenger->addMessage($this->t('The %header of your message is not supported by PHPMailer and will be sent as text/plain instead.', ['%header' => "Content-Type: $value"]), 'error');
               $this->logger->error(t('The %header of your message is not supported by PHPMailer and will be sent as text/plain instead.', ['%header' => "Content-Type: $value"]));
 
               // Force the Content-Type to be text/plain.
@@ -227,7 +253,7 @@ class SMTPMailSystem implements MailInterface, ContainerFactoryPluginInterface {
         case 'reply-to':
           // Only add a "reply-to" if it's not the same as "return-path".
           if ($value != $headers['Return-Path']) {
-            $reply_to_comp = $this->_get_components($value);
+            $reply_to_comp = $this->getComponents($value);
             $mailer->AddReplyTo($reply_to_comp['email'], $reply_to_comp['name']);
           }
           break;
@@ -252,7 +278,7 @@ class SMTPMailSystem implements MailInterface, ContainerFactoryPluginInterface {
         case 'cc':
           $ccrecipients = explode(',', $value);
           foreach ($ccrecipients as $ccrecipient) {
-            $cc_comp = $this->_get_components($ccrecipient);
+            $cc_comp = $this->getComponents($ccrecipient);
             $mailer->AddCC($cc_comp['email'], $cc_comp['name']);
           }
           break;
@@ -260,7 +286,7 @@ class SMTPMailSystem implements MailInterface, ContainerFactoryPluginInterface {
         case 'bcc':
           $bccrecipients = explode(',', $value);
           foreach ($bccrecipients as $bccrecipient) {
-            $bcc_comp = $this->_get_components($bccrecipient);
+            $bcc_comp = $this->getComponents($bccrecipient);
             $mailer->AddBCC($bcc_comp['email'], $bcc_comp['name']);
           }
           break;
@@ -271,21 +297,20 @@ class SMTPMailSystem implements MailInterface, ContainerFactoryPluginInterface {
       }
     }
 
-    /**
-     * TODO
-     * Need to figure out the following.
-     *
-     * Add one last header item, but not if it has already been added.
-     * $errors_to = FALSE;
-     * foreach ($mailer->CustomHeader as $custom_header) {
-     *   if ($custom_header[0] = '') {
-     *     $errors_to = TRUE;
-     *   }
-     * }
-     * if ($errors_to) {
-     *   $mailer->AddCustomHeader('Errors-To: '. $from);
-     * }
-     */
+    // TODO
+    // Need to figure out the following.
+    //
+    // Add one last header item, but not if it has already been added.
+    // $errors_to = FALSE;
+    // foreach ($mailer->CustomHeader as $custom_header) {
+    // if ($custom_header[0] = '') {
+    // $errors_to = TRUE;
+    // }
+    // }
+    // if ($errors_to) {
+    // $mailer->AddCustomHeader('Errors-To: '. $from);
+    // }
+    //
     // Add the message's subject.
     $mailer->Subject = $subject;
 
@@ -298,19 +323,19 @@ class SMTPMailSystem implements MailInterface, ContainerFactoryPluginInterface {
 
       case 'multipart/alternative':
         // Split the body based on the boundary ID.
-        $body_parts = $this->_boundary_split($body, $boundary);
+        $body_parts = $this->boundarySplit($body, $boundary);
         foreach ($body_parts as $body_part) {
           // If plain/text within the body part, add it to $mailer->AltBody.
           if (strpos($body_part, 'text/plain')) {
             // Clean up the text.
-            $body_part = trim($this->_remove_headers(trim($body_part)));
+            $body_part = trim($this->removeHeaders(trim($body_part)));
             // Include it as part of the mail object.
             $mailer->AltBody = $body_part;
           }
           // If plain/html within the body part, add it to $mailer->Body.
           elseif (strpos($body_part, 'text/html')) {
             // Clean up the text.
-            $body_part = trim($this->_remove_headers(trim($body_part)));
+            $body_part = trim($this->removeHeaders(trim($body_part)));
             // Include it as part of the mail object.
             $mailer->Body = $body_part;
           }
@@ -319,11 +344,12 @@ class SMTPMailSystem implements MailInterface, ContainerFactoryPluginInterface {
 
       case 'multipart/mixed':
         // Split the body based on the boundary ID.
-        $body_parts = $this->_boundary_split($body, $boundary);
+        $body_parts = $this->boundarySplit($body, $boundary);
 
-        // Determine if there is an HTML part for when adding the plain text part.
+        // Determine if there is an HTML part.
+        // For when adding the plain text part.
         $text_plain = FALSE;
-        $text_html  = FALSE;
+        $text_html = FALSE;
         foreach ($body_parts as $body_part) {
           if (strpos($body_part, 'text/plain')) {
             $text_plain = TRUE;
@@ -339,17 +365,17 @@ class SMTPMailSystem implements MailInterface, ContainerFactoryPluginInterface {
           // also a text/html part ot not.
           if (strpos($body_part, 'multipart/alternative')) {
             // Get boundary ID from the Content-Type header.
-            $boundary2 = $this->_get_substring($body_part, 'boundary', '"', '"');
+            $boundary2 = $this->getSubstring($body_part, 'boundary', '"', '"');
             // Clean up the text.
-            $body_part = trim($this->_remove_headers(trim($body_part)));
+            $body_part = trim($this->removeHeaders(trim($body_part)));
             // Split the body based on the boundary ID.
-            $body_parts2 = $this->_boundary_split($body_part, $boundary2);
+            $body_parts2 = $this->boundarySplit($body_part, $boundary2);
 
             foreach ($body_parts2 as $body_part2) {
               // If plain/text within the body part, add it to $mailer->AltBody.
               if (strpos($body_part2, 'text/plain')) {
                 // Clean up the text.
-                $body_part2 = trim($this->_remove_headers(trim($body_part2)));
+                $body_part2 = trim($this->removeHeaders(trim($body_part2)));
                 // Include it as part of the mail object.
                 $mailer->AltBody = $body_part2;
                 $mailer->ContentType = 'multipart/mixed';
@@ -357,9 +383,9 @@ class SMTPMailSystem implements MailInterface, ContainerFactoryPluginInterface {
               // If plain/html within the body part, add it to $mailer->Body.
               elseif (strpos($body_part2, 'text/html')) {
                 // Get the encoding.
-                $body_part2_encoding = $this->_get_substring($body_part2, 'Content-Transfer-Encoding', ' ', "\n");
+                $body_part2_encoding = $this->getSubstring($body_part2, 'Content-Transfer-Encoding', ' ', "\n");
                 // Clean up the text.
-                $body_part2 = trim($this->_remove_headers(trim($body_part2)));
+                $body_part2 = trim($this->removeHeaders(trim($body_part2)));
                 // Check whether the encoding is base64, and if so, decode it.
                 if (Unicode::strtolower($body_part2_encoding) == 'base64') {
                   // Include it as part of the mail object.
@@ -378,7 +404,7 @@ class SMTPMailSystem implements MailInterface, ContainerFactoryPluginInterface {
           // If text/plain within the body part, add it to $mailer->Body.
           elseif (strpos($body_part, 'text/plain')) {
             // Clean up the text.
-            $body_part = trim($this->_remove_headers(trim($body_part)));
+            $body_part = trim($this->removeHeaders(trim($body_part)));
 
             if ($text_html) {
               $mailer->AltBody = $body_part;
@@ -394,7 +420,7 @@ class SMTPMailSystem implements MailInterface, ContainerFactoryPluginInterface {
           // If text/html within the body part, add it to $mailer->Body.
           elseif (strpos($body_part, 'text/html')) {
             // Clean up the text.
-            $body_part = trim($this->_remove_headers(trim($body_part)));
+            $body_part = trim($this->removeHeaders(trim($body_part)));
             // Include it as part of the mail object.
             $mailer->Body = $body_part;
             $mailer->IsHTML(TRUE);
@@ -402,19 +428,19 @@ class SMTPMailSystem implements MailInterface, ContainerFactoryPluginInterface {
           }
           // Add the attachment.
           elseif (strpos($body_part, 'Content-Disposition: attachment;') && !isset($message['params']['attachments'])) {
-            $file_path     = $this->_get_substring($body_part, 'filename=', '"', '"');
-            $file_name     = $this->_get_substring($body_part, ' name=', '"', '"');
-            $file_encoding = $this->_get_substring($body_part, 'Content-Transfer-Encoding', ' ', "\n");
-            $file_type     = $this->_get_substring($body_part, 'Content-Type', ' ', ';');
+            $file_path     = $this->getSubstring($body_part, 'filename=', '"', '"');
+            $file_name     = $this->getSubstring($body_part, ' name=', '"', '"');
+            $file_encoding = $this->getSubstring($body_part, 'Content-Transfer-Encoding', ' ', "\n");
+            $file_type     = $this->getSubstring($body_part, 'Content-Type', ' ', ';');
 
             if (file_exists($file_path)) {
               if (!$mailer->AddAttachment($file_path, $file_name, $file_encoding, $file_type)) {
-                drupal_set_message(t('Attahment could not be found or accessed.'));
+                $this->messenger->addMessage($this->t('Attahment could not be found or accessed.'));
               }
             }
             else {
               // Clean up the text.
-              $body_part = trim($this->_remove_headers(trim($body_part)));
+              $body_part = trim($this->removeHeaders(trim($body_part)));
 
               if (Unicode::strtolower($file_encoding) == 'base64') {
                 $attachment = base64_decode($body_part);
@@ -431,7 +457,7 @@ class SMTPMailSystem implements MailInterface, ContainerFactoryPluginInterface {
               $real_path = \Drupal::service('file_system')->realpath($file_path->uri);
 
               if (!$mailer->AddAttachment($real_path, $file_name)) {
-                drupal_set_message(t('Attachment could not be found or accessed.'));
+                $this->messenger->addMessage($this->t('Attachment could not be found or accessed.'));
               }
             }
           }
@@ -468,7 +494,6 @@ class SMTPMailSystem implements MailInterface, ContainerFactoryPluginInterface {
       $mailer->Password = $password;
     }
 
-
     // Set the protocol prefix for the smtp host.
     switch ($this->smtpConfig->get('smtp_protocol')) {
       case 'ssl':
@@ -482,7 +507,6 @@ class SMTPMailSystem implements MailInterface, ContainerFactoryPluginInterface {
       default:
         $mailer->SMTPSecure = '';
     }
-
 
     // Set other connection settings.
     $mailer->Host = $this->smtpConfig->get('smtp_host') . ';' . $this->smtpConfig->get('smtp_hostbackup');
@@ -511,14 +535,15 @@ class SMTPMailSystem implements MailInterface, ContainerFactoryPluginInterface {
    * Swiped from Mail::MimeDecode, with modifications based on Drupal's coding
    * standards and this bug report: http://pear.php.net/bugs/bug.php?id=6495
    *
-   * @param input
+   * @param string $input
    *   A string containing the body text to parse.
-   * @param boundary
+   * @param string $boundary
    *   A string with the boundary string to parse on.
-   * @return
+   *
+   * @return array
    *   An array containing the resulting mime parts
    */
-  protected function _boundary_split($input, $boundary) {
+  protected function boundarySplit($input, $boundary) {
     $parts       = [];
     $bs_possible = substr($boundary, 2, -2);
     $bs_check    = '\"' . $bs_possible . '\"';
@@ -536,21 +561,27 @@ class SMTPMailSystem implements MailInterface, ContainerFactoryPluginInterface {
     }
 
     return $parts;
-  }  //  End of _smtp_boundary_split().
+  }  //  End of _smtpboundarySplit().
 
   /**
    * Strips the headers from the body part.
    *
-   * @param input
+   * @param string $input
    *   A string containing the body part to strip.
-   * @return
+   *
+   * @return string
    *   A string with the stripped body part.
    */
-  protected function _remove_headers($input) {
+  protected function removeHeaders($input) {
     $part_array = explode("\n", $input);
 
     // Will strip these headers according to RFC2045.
-    $headers_to_strip = ['Content-Type', 'Content-Transfer-Encoding', 'Content-ID', 'Content-Disposition'];
+    $headers_to_strip = [
+      'Content-Type',
+      'Content-Transfer-Encoding',
+      'Content-ID',
+      'Content-Disposition',
+    ];
     $pattern = '/^(' . implode('|', $headers_to_strip) . '):/';
 
     while (count($part_array) > 0) {
@@ -561,10 +592,11 @@ class SMTPMailSystem implements MailInterface, ContainerFactoryPluginInterface {
       // If the line starts with a known header string.
       if (preg_match($pattern, $line)) {
         $line = rtrim(array_shift($part_array));
-        // Remove line containing matched header.
 
-        // If line ends in a ';' and the next line starts with four spaces, it's a continuation
-        // of the header split onto the next line. Continue removing lines while we have this condition.
+        // Remove line containing matched header.
+        // If line ends in a ';' and the next line starts with four spaces,
+        // it's a continuation of the header split onto the next line.
+        // Continue removing lines while we have this condition.
         while (substr($line, -1) == ';' && count($part_array) > 0 && substr($part_array[0], 0, 4) == '    ') {
           $line = rtrim(array_shift($part_array));
         }
@@ -585,19 +617,20 @@ class SMTPMailSystem implements MailInterface, ContainerFactoryPluginInterface {
    * Returns the string from within $source that is some where after $target
    * and is between $beginning_character and $ending_character.
    *
-   * @param $source
+   * @param string $source
    *   A string containing the text to look through.
-   * @param $target
+   * @param string $target
    *   A string containing the text in $source to start looking from.
-   * @param $beginning_character
+   * @param string $beginning_character
    *   A string containing the character just before the sought after text.
-   * @param $ending_character
+   * @param string $ending_character
    *   A string containing the character just after the sought after text.
-   * @return
+   *
+   * @return string
    *   A string with the text found between the $beginning_character and the
    *   $ending_character.
    */
-  protected function _get_substring($source, $target, $beginning_character, $ending_character) {
+  protected function getSubstring($source, $target, $beginning_character, $ending_character) {
     $search_start     = strpos($source, $target) + 1;
     $first_character  = strpos($source, $beginning_character, $search_start) + 1;
     $second_character = strpos($source, $ending_character, $first_character) + 1;
@@ -614,30 +647,31 @@ class SMTPMailSystem implements MailInterface, ContainerFactoryPluginInterface {
   /**
    * Returns an array of name and email address from a string.
    *
-   * @param $input
-   *  A string that contains different possible combinations of names and
-   *  email address.
-   * @return
-   *  An array containing a name and an email address.
+   * @param string $input
+   *   A string that contains different possible combinations of names and
+   *   email address.
+   *
+   * @return array
+   *   An array containing a name and an email address.
    */
-  protected function _get_components($input) {
+  protected function getComponents($input) {
     $components = [
       'input' => $input,
       'name' => '',
       'email' => '',
     ];
 
-    // If the input is a valid email address in its entirety, then there is
-    // nothing to do, just return that.
+    // If the input is a valid email address in its entirety,
+    // then there is nothing to do, just return that.
     if (\Drupal::service('email.validator')->isValid(trim($input))) {
       $components['email'] = trim($input);
       return $components;
     }
 
     // Check if $input has one of the following formats, extract what we can:
-    //  some name <address@example.com>
-    //  "another name" <address@example.com>
-    //  <address@example.com>
+    // some name <address@example.com>.
+    // "another name" <address@example.com>.
+    // <address@example.com>.
     if (preg_match('/^"?([^"\t\n]*)"?\s*<([^>\t\n]*)>$/', trim($input), $matches)) {
       $components['name'] = trim($matches[1]);
       $components['email'] = trim($matches[2]);
@@ -645,4 +679,5 @@ class SMTPMailSystem implements MailInterface, ContainerFactoryPluginInterface {
 
     return $components;
   }
+
 }
