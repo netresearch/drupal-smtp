@@ -109,16 +109,7 @@ class SMTPMailSystemTest extends UnitTestCase {
    * @dataProvider getComponentsProvider
    */
   public function testGetComponents($input, $expected) {
-    $mailSystem = new class([], '', [], $this->mockLogger->reveal(), $this->mockMessenger->reveal(), $this->emailValidator) extends SMTPMailSystem {
-
-      /**
-       * Exposes getComponents for testing.
-       */
-      public function publiGetComponents($input) {
-        return $this->getComponents($input);
-      }
-
-    };
+    $mailSystem = new SMTPMailSystemTestHelper([], '', [], $this->mockLogger->reveal(), $this->mockMessenger->reveal(), $this->emailValidator);
 
     $ret = $mailSystem->publiGetComponents($input);
 
@@ -134,3 +125,17 @@ class SMTPMailSystemTest extends UnitTestCase {
   }
 
 }
+
+/**
+ * Test helper for SMTPMailSystemTest.
+ */
+class SMTPMailSystemTestHelper extends SMTPMailSystem {
+
+  /**
+   * Exposes getComponents for testing.
+   */
+  public function publiGetComponents($input) {
+    return $this->getComponents($input);
+  }
+
+};
