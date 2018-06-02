@@ -46,7 +46,7 @@ class SMTPConfigForm extends ConfigFormBase {
   /**
    * {@inheritdoc}
    */
-  public function getFormID() {
+  public function getFormId() {
     return 'smtp_admin_settings';
   }
 
