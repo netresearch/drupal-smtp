@@ -13,7 +13,7 @@ use Prophecy\Argument;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
- * Validate requirements for ProceedingsRealmNegotiator.
+ * Validate requirements for SMTPConfigForm.
  *
  * @group SMTP
  */
