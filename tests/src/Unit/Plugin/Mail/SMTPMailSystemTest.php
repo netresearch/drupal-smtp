@@ -48,7 +48,8 @@ class SMTPMailSystemTest extends UnitTestCase {
     $mockContainer->get('string_translation')->willReturn($mockStringTranslation->reveal());
 
     // Email validator.
-    $mockContainer->get('email.validator')->willReturn(new EmailValidator());
+    $this->emailValidator = new EmailValidator();
+    $mockContainer->get('email.validator')->willReturn($this->emailValidator);
     \Drupal::setContainer($this->mockContainer->reveal());
   }
 
@@ -108,7 +109,7 @@ class SMTPMailSystemTest extends UnitTestCase {
    * @dataProvider getComponentsProvider
    */
   public function testGetComponents($input, $expected) {
-    $mailSystem = new class([], '', [], $this->mockLogger->reveal(), $this->mockMessenger->reveal()) extends SMTPMailSystem {
+    $mailSystem = new class([], '', [], $this->mockLogger->reveal(), $this->mockMessenger->reveal(), $this->emailValidator) extends SMTPMailSystem {
 
       /**
        * Exposes getComponents for testing.

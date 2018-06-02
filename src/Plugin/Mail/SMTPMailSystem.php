@@ -8,6 +8,7 @@ use Drupal\Core\Mail\MailFormatHelper;
 use Drupal\Core\Mail\MailInterface;
 use Drupal\Core\Messenger\Messenger;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
+use Egulias\EmailValidator\EmailValidator;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\smtp\PHPMailer\PHPMailer;
 
@@ -41,6 +42,13 @@ class SMTPMailSystem implements MailInterface, ContainerFactoryPluginInterface {
   protected $messenger;
 
   /**
+   * Email validator.
+   *
+   * @var Egulias\EmailValidator\EmailValidator
+   */
+  protected $emailValidator;
+
+  /**
    * Constructs a SMPTMailSystem object.
    *
    * @param array $configuration
@@ -53,11 +61,14 @@ class SMTPMailSystem implements MailInterface, ContainerFactoryPluginInterface {
    *   The logger object.
    * @param \Drupal\Core\Messenger\Messenger $messenger
    *   The messenger object.
+   * @param \Egulias\EmailValidator\EmailValidator $emailValidator
+   *   The messenger object.
    */
-  public function __construct(array $configuration, $plugin_id, $plugin_definition, LoggerChannelFactoryInterface $logger, Messenger $messenger) {
+  public function __construct(array $configuration, $plugin_id, $plugin_definition, LoggerChannelFactoryInterface $logger, Messenger $messenger, EmailValidator $emailValidator) {
     $this->smtpConfig = \Drupal::config('smtp.settings');
     $this->logger = $logger;
     $this->messenger = $messenger;
+    $this->emailValidator = $emailValidator;
   }
 
   /**
@@ -76,7 +87,14 @@ class SMTPMailSystem implements MailInterface, ContainerFactoryPluginInterface {
    *   Returns an instance of this plugin.
    */
   public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition) {
-    return new static($configuration, $plugin_id, $plugin_definition, $container->get('logger.factory'), $container->get('messenger'));
+    return new static(
+      $configuration,
+      $plugin_id,
+      $plugin_definition,
+      $container->get('logger.factory'),
+      $container->get('messenger'),
+      $container->get('email.validator')
+    );
   }
 
   /**
@@ -137,7 +155,7 @@ class SMTPMailSystem implements MailInterface, ContainerFactoryPluginInterface {
     }
 
     // Set SMTP module email from.
-    if (\Drupal::service('email.validator')->isValid($this->smtpConfig->get('smtp_from'))) {
+    if ($this->emailValidator->isValid($this->smtpConfig->get('smtp_from'))) {
       $from = $this->smtpConfig->get('smtp_from');
       $headers['Sender'] = $from;
       $headers['Return-Path'] = $from;
@@ -667,7 +685,7 @@ class SMTPMailSystem implements MailInterface, ContainerFactoryPluginInterface {
 
     // If the input is a valid email address in its entirety,
     // then there is nothing to do, just return that.
-    if (\Drupal::service('email.validator')->isValid($input)) {
+    if ($this->emailValidator->isValid($input)) {
       $components['email'] = $input;
       return $components;
     }
