@@ -94,4 +94,14 @@ class SMTPConfigFormTest extends UnitTestCase {
     $this->mockMessenger->addMessage(Argument::which('getUntranslatedString', 'SMTP module is INACTIVE.'))->shouldHaveBeenCalled();
   }
 
+  /**
+   * Test form id.
+   */
+  public function testGetFormId() {
+    $formBuilder = SMTPConfigForm::create($this->mockContainer->reveal());
+
+    $form_id = $formBuilder->getFormId();
+    $this->assertEquals('smtp_admin_settings', $form_id);
+  }
+
 }
