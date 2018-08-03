@@ -456,7 +456,7 @@ class SMTPMailSystem implements MailInterface, ContainerFactoryPluginInterface {
 
             if (file_exists($file_path)) {
               if (!$mailer->AddAttachment($file_path, $file_name, $file_encoding, $file_type)) {
-                $this->messenger->addMessage($this->t('Attahment could not be found or accessed.'));
+                $this->messenger->addMessage($this->t('Attachment could not be found or accessed.'));
               }
             }
             else {
