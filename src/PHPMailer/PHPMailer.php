@@ -768,7 +768,7 @@ class PHPMailer {
 
     if (count($bad_rcpt) > 0 ) { //Create error message for any bad addresses
       $badaddresses = implode(', ', $bad_rcpt);
-      throw new PHPMailerException(t('SMTP Error: The following recipients failed: @bad', array('@bad' => $badaddresses)));
+      $this->SetError(t('SMTP Error: The following recipients failed: @bad', array('@bad' => $badaddresses)));
     }
     if (!$this->smtp->Data($header . $body)) {
       throw new PHPMailerException(t('SMTP Error: Data not accepted.'), self::STOP_CRITICAL);
