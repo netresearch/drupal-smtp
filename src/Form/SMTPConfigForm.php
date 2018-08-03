@@ -231,7 +231,7 @@ class SMTPConfigForm extends ConfigFormBase {
    * Check if config variable is overridden by the settings.php.
    *
    * @param string $name
-   *   STMP settings key.
+   *   SMTP settings key.
    *
    * @return bool
    *   Boolean.

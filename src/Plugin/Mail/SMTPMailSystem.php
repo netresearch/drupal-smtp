@@ -217,7 +217,7 @@ class SMTPMailSystem implements MailInterface, ContainerFactoryPluginInterface {
           }
 
           // Set the charset based on the provided value,
-          // otherwise set it to UTF-8 (which is Drupals internal default).
+          // otherwise set it to UTF-8 (which is Drupal's internal default).
           $mailer->CharSet = isset($vars['charset']) ? $vars['charset'] : 'UTF-8';
 
           // If $vars is empty then set an empty value at index 0,
@@ -263,7 +263,7 @@ class SMTPMailSystem implements MailInterface, ContainerFactoryPluginInterface {
               break;
 
             default:
-              // Everything else is unsuppored by PHPMailer.
+              // Everything else is unsupported by PHPMailer.
               $this->messenger->addMessage($this->t('The %header of your message is not supported by PHPMailer and will be sent as text/plain instead.', ['%header' => "Content-Type: $value"]), 'error');
               $this->logger->error(t('The %header of your message is not supported by PHPMailer and will be sent as text/plain instead.', ['%header' => "Content-Type: $value"]));
 
